@@ -1,5 +1,6 @@
 package org.aksw.simba.squirrel.data.uri;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -13,6 +14,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+import org.msgpack.MessagePack;
+import org.msgpack.packer.Packer;
+import org.msgpack.template.Template;
+import org.msgpack.unpacker.Unpacker;
 
 import com.google.gson.Gson;
 
@@ -26,7 +31,7 @@ public class CrawleableUriSerializationTest {
         temp.addData(Constants.URI_HTTP_MIME_TYPE_KEY, "application/json-ld");
         temp.addData(Constants.URI_HTTP_CHARSET_KEY, "utf-8");
         temp.addData(Constants.URI_PREFERRED_RECRAWL_ON, System.currentTimeMillis() + 100000L);
-        
+
         return Arrays.asList(new Object[][] { { new CrawleableUri(new URI("http://localhost/test")) },
                 { new CrawleableUri(new URI("http://google.de")) },
                 { new CrawleableUri(new URI("http://google.de"), InetAddress.getByName("192.168.100.1"),
@@ -38,7 +43,7 @@ public class CrawleableUriSerializationTest {
                 { new CrawleableUri(new URI("http://google.de"), InetAddress.getByName("192.168.100.1"),
                         UriType.UNKNOWN) },
                 { new CrawleableUri(new URI("http://dbpedia.org"), null, UriType.SPARQL) },
-                { new CrawleableUri(new URI("http://google.de"), InetAddress.getByName("255.255.255.255")) } ,
+                { new CrawleableUri(new URI("http://google.de"), InetAddress.getByName("255.255.255.255")) },
                 { temp } });
     }
 
@@ -49,23 +54,26 @@ public class CrawleableUriSerializationTest {
     }
 
     @Test
-    public void test() throws URISyntaxException, UnknownHostException {
+    public void test() throws URISyntaxException, IOException {
         CrawleableUri parsedUri;
         Gson gson = new Gson();
-        
-        String json = gson.toJson(uri);
-        
-        System.out.println(json);
-        parsedUri = gson.fromJson(json, CrawleableUri.class);
+        MessagePack msgpack = new MessagePack();
+        msgpack.register(InetAddress.class);
+
+        byte[] raw = msgpack.write(uri);
+
+        // String json = gson.toJson(uri);
+
+        // System.out.println(json);
+        // parsedUri = gson.fromJson(json, CrawleableUri.class);
+        parsedUri = msgpack.read(raw, CrawleableUri.class);
         Assert.assertEquals(uri.getIpAddress(), parsedUri.getIpAddress());
         Assert.assertEquals(uri.getType(), parsedUri.getType());
         Assert.assertEquals(uri.getUri(), parsedUri.getUri());
-        for(String key : uri.getData().keySet()) {
-        	
-        	
-        	
+        for (String key : uri.getData().keySet()) {
+
             Assert.assertEquals(uri.getData(key), parsedUri.getData(key));
-            
+
         }
         Assert.assertEquals(uri.getData().size(), parsedUri.getData().size());
     }
