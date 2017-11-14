@@ -1,5 +1,7 @@
 package org.aksw.simba.squirrel.data.uri;
 
+import org.msgpack.annotation.Message;
+
 @Deprecated
 public enum UriType {
     /**

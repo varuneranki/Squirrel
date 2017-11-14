@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -17,6 +16,7 @@ import org.junit.runners.Parameterized.Parameters;
 import org.msgpack.MessagePack;
 import org.msgpack.packer.Packer;
 import org.msgpack.template.Template;
+import org.msgpack.type.ValueType;
 import org.msgpack.unpacker.Unpacker;
 
 import com.google.gson.Gson;
@@ -56,9 +56,88 @@ public class CrawleableUriSerializationTest {
     @Test
     public void test() throws URISyntaxException, IOException {
         CrawleableUri parsedUri;
-        Gson gson = new Gson();
+        // Gson gson = new Gson();
         MessagePack msgpack = new MessagePack();
-        msgpack.register(InetAddress.class);
+        msgpack.register(InetAddress.class, new Template<InetAddress>() {
+
+            @Override
+            public void write(Packer pk, InetAddress v) throws IOException {
+                byte count = 0;
+                byte[] ipData = v.getAddress();
+                if ((ipData != null) && (ipData.length > 0)) {
+                    ++count;
+                }
+                String hostName = v.getCanonicalHostName();
+                if (hostName != null) {
+                    count += 2;
+                }
+                pk.write(count);
+                if ((ipData != null) && (ipData.length > 0)) {
+                    pk.write(v.getAddress());
+                }
+                if (hostName != null) {
+                    pk.write(hostName);
+                }
+            }
+
+            @Override
+            public void write(Packer pk, InetAddress v, boolean required) throws IOException {
+                write(pk, v, required);
+            }
+
+            @Override
+            public InetAddress read(Unpacker u, InetAddress to) throws IOException {
+                byte mask = u.readByte();
+                byte[] ipData = null;
+                if ((mask & 0x1) > 0) {
+                    ipData = u.readByteArray();
+                }
+                String hostName = null;
+                if ((mask & 0x2) > 0) {
+                    hostName = u.readString();
+                }
+                if (ipData == null) {
+                    if (hostName == null) {
+                        return null;
+                    } else {
+                        return InetAddress.getByName(hostName);
+                    }
+                } else {
+                    if (hostName == null) {
+                        return InetAddress.getByAddress(ipData);
+                    } else {
+                        return InetAddress.getByAddress(hostName, ipData);
+                    }
+                }
+            }
+
+            @Override
+            public InetAddress read(Unpacker u, InetAddress to, boolean required) throws IOException {
+                return read(u, to);
+            }
+        });
+        msgpack.register(UriType.class, new Template<UriType>() {
+
+            @Override
+            public void write(Packer pk, UriType v) throws IOException {
+                pk.write(v.ordinal());
+            }
+
+            @Override
+            public void write(Packer pk, UriType v, boolean required) throws IOException {
+                write(pk, v);
+            }
+
+            @Override
+            public UriType read(Unpacker u, UriType to) throws IOException {
+                return UriType.values()[u.readInt()];
+            }
+
+            @Override
+            public UriType read(Unpacker u, UriType to, boolean required) throws IOException {
+                return read(u, to);
+            }
+        });
 
         byte[] raw = msgpack.write(uri);
 
