@@ -43,14 +43,14 @@ public class RDFAnalyzer implements Analyzer {
             FilterSinkRDF filtered = new FilterSinkRDF(curi, sink, collector);
             RDFDataMgr.parse(filtered, data.getAbsolutePath(), lang);
         } catch (Exception e) {
-            LOGGER.error("Exception while analyzing. Aborting.");
+            LOGGER.error("Exception while analyzing. Aborting. ", e);
         } finally {
             IOUtils.closeQuietly(fin);
         }
         return collector.getUris(curi);
     }
 
-    protected static class FilterSinkRDF extends StreamRDFBase {
+    protected class FilterSinkRDF extends StreamRDFBase {
 
         private CrawleableUri curi;
         private Sink sink;

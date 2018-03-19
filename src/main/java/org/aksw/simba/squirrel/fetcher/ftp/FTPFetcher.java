@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,7 +22,7 @@ import org.slf4j.LoggerFactory;
 /**
  * TODO Update this class by removing its dependency regarding the deprecated
  * {@link DumpFetcher} class.
- * 
+ *
  * @author Michael R&ouml;der (michael.roeder@uni-paderborn.de)
  *
  */
@@ -31,6 +33,7 @@ public class FTPFetcher implements Fetcher {
     protected static final Set<String> ACCEPTED_SCHEMES = new HashSet<String>(Arrays.asList("ftp", "ftps"));
 
     protected File dataDirectory = FileUtils.getTempDirectory();
+    private FTPRecursiveFetcher recursiveFetcher;
 
     @Override
     public File fetch(CrawleableUri uri) {
@@ -49,11 +52,14 @@ public class FTPFetcher implements Fetcher {
         return requestData(uri, dataFile);
     }
 
+    @SuppressWarnings("resource")
     private File requestData(CrawleableUri uri, File dataFile) {
+
         // Download file to temp folder
         FTPClient client = new FTPClient();
         OutputStream output = null;
         try {
+
             client.connect(uri.getIpAddress());
             if (!FTPReply.isPositiveCompletion(client.getReplyCode())) {
                 client.disconnect();
@@ -62,10 +68,21 @@ public class FTPFetcher implements Fetcher {
             }
 
             client.enterLocalPassiveMode();
-            output = new FileOutputStream(dataFile);
-            if (!client.retrieveFile(uri.getUri().getPath(), output)) {
-                LOGGER.error("Downloading {} was not succesful. Returning null.", uri.getUri().toString());
+            client.login("anonymous", "");
+
+            if (client.mlistFile(uri.getUri().getPath()).isDirectory()) {
+                Path path = Files.createTempDirectory("file_");
+                recursiveFetcher = new FTPRecursiveFetcher(path);
+                recursiveFetcher.listDirectory(client, uri.getUri().getPath(), "", 0);
+                dataFile = path.toFile();
+
+            } else {
+                output = new FileOutputStream(dataFile);
+                if (!client.retrieveFile(uri.getUri().getPath(), output)) {
+                    LOGGER.error("Downloading {} was not succesful. Returning null.", uri.getUri().toString());
+                }
             }
+
         } catch (Exception e) {
             LOGGER.error("Exception while trying to download (" + uri.getUri().toString() + "). Returning null.", e);
             return null;
@@ -80,9 +97,11 @@ public class FTPFetcher implements Fetcher {
         return dataFile;
     }
 
+
     @Override
     public void close() throws IOException {
         // nothing to do
     }
+
 
 }

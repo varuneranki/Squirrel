@@ -13,15 +13,12 @@ import org.aksw.simba.squirrel.collect.UriCollector;
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
 import org.aksw.simba.squirrel.data.uri.UriType;
 import org.aksw.simba.squirrel.data.uri.serialize.java.GzipJavaUriSerializer;
-import org.aksw.simba.squirrel.fetcher.http.HTTPFetcher;
 import org.aksw.simba.squirrel.sink.Sink;
-import org.aksw.simba.squirrel.sink.impl.file.FileBasedSink;
 import org.aksw.simba.squirrel.sink.impl.mem.InMemorySink;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-@SuppressWarnings("deprecation")
 public class AnalyzerTest {
 
 	private Analyzer analyzer;
@@ -52,7 +49,6 @@ public class AnalyzerTest {
 		ClassLoader classLoader = getClass().getClassLoader();
 
 		data = new File(classLoader.getResource(fileToTest).getFile());
-
 	}
 
 
@@ -67,7 +63,5 @@ public class AnalyzerTest {
         }
 
 		Assert.assertEquals(expectedUris, cont);
-
 	}
-
 }

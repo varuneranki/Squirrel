@@ -4,6 +4,8 @@ import crawlercommons.fetcher.http.SimpleHttpFetcher;
 import crawlercommons.fetcher.http.UserAgent;
 import org.aksw.simba.squirrel.collect.SqlBasedUriCollector;
 import org.aksw.simba.squirrel.collect.UriCollector;
+import org.aksw.simba.squirrel.configurator.RobotsManagerConfiguration;
+import org.aksw.simba.squirrel.configurator.WorkerConfiguration;
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
 import org.aksw.simba.squirrel.data.uri.serialize.Serializer;
 import org.aksw.simba.squirrel.data.uri.serialize.java.GzipJavaUriSerializer;
@@ -47,16 +49,22 @@ public class WorkerComponent extends AbstractComponent implements Frontier, Seri
     @Override
     public void init() throws Exception {
         super.init();
-        Map<String, String> env = System.getenv();
-        String outputFolder = null;
-        if (env.containsKey(OUTPUT_FOLDER_KEY)) {
-            outputFolder = env.get(OUTPUT_FOLDER_KEY);
-        } else {
-            String msg = "Couldn't get " + OUTPUT_FOLDER_KEY + " from the environment.";
-            throw new Exception(msg);
+
+        WorkerConfiguration workerConfiguration = WorkerConfiguration.getWorkerConfiguration();
+        String outputFolder = workerConfiguration.getOutputFolder();
+
+        RobotsManagerImpl robotsmanager = new RobotsManagerImpl(
+            new SimpleHttpFetcher(
+                new UserAgent("Test", "", "")
+            )
+        );
+        RobotsManagerConfiguration robotsManagerConfiguration = RobotsManagerConfiguration.getRobotsManagerConfiguration();
+        if (robotsManagerConfiguration != null) {
+            robotsmanager.setDefaultMinWaitingTime(robotsManagerConfiguration.getMinDelay());
         }
 
-        sender = DataSenderImpl.builder().queue(outgoingDataQueuefactory, FrontierComponent.FRONTIER_QUEUE_NAME)
+        sender = DataSenderImpl.builder()
+            .queue(outgoingDataQueuefactory, FrontierComponent.FRONTIER_QUEUE_NAME)
             .build();
         client = RabbitRpcClient.create(outgoingDataQueuefactory.getConnection(),
             FrontierComponent.FRONTIER_QUEUE_NAME);
@@ -128,12 +136,18 @@ public class WorkerComponent extends AbstractComponent implements Frontier, Seri
 
     @Override
     public void addNewUris(List<CrawleableUri> uris) {
+
+        for (CrawleableUri uri : uris) {
+            uri.addData("TEST", "123UPB");
+        }
+
         try {
             sender.sendData(serializer.serialize(new UriSet(uris)));
         } catch (Exception e) {
             LOGGER.error("Exception while sending URIs to the frontier.", e);
         }
     }
+
 
     @Override
     public void crawlingDone(List<CrawleableUri> crawledUris, List<CrawleableUri> newUris) {

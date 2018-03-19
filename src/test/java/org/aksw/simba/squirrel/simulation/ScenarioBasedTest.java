@@ -1,7 +1,13 @@
 package org.aksw.simba.squirrel.simulation;
 
-import crawlercommons.fetcher.http.SimpleHttpFetcher;
-import crawlercommons.fetcher.http.UserAgent;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 import org.aksw.simba.squirrel.AbstractServerMockUsingTest;
 import org.aksw.simba.squirrel.collect.SqlBasedUriCollector;
 import org.aksw.simba.squirrel.collect.UriCollector;
@@ -32,13 +38,8 @@ import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import crawlercommons.fetcher.http.SimpleHttpFetcher;
+import crawlercommons.fetcher.http.UserAgent;
 
 @RunWith(Parameterized.class)
 public class ScenarioBasedTest extends AbstractServerMockUsingTest {
@@ -152,6 +153,12 @@ public class ScenarioBasedTest extends AbstractServerMockUsingTest {
         } while ((frontier.getNumberOfPendingUris() > 0)); // Testing it in this way is tricky since it is not thread
         // save.
         worker.setTerminateFlag(true);
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            Assert.fail(e.getMessage());
+        }
+        worker.close();
 
         // compare the expected results with those found inside the sink
         boolean success = true;

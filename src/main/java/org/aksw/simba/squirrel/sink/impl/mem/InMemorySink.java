@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.aksw.simba.squirrel.Constants;
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
 import org.aksw.simba.squirrel.sink.Sink;
 import org.apache.jena.graph.Node;
@@ -34,7 +35,7 @@ import com.google.common.collect.Sets.SetView;
  * status does not influence the functionality of the sink. The status of the
  * sink, i.e., whether it is healthy or not, can be accessed using the
  * {@link #isSinkHealthy()} method.
- * 
+ *
  * @author Michael R&ouml;der (roeder@informatik.uni-leipzig.de)
  *
  */
@@ -60,6 +61,10 @@ public class InMemorySink implements Sink {
      * The healthyness of the sink that is set to false if an error is encountered.
      */
     private boolean healthyness = true;
+
+    public InMemorySink() {
+        openSinkForUri(new CrawleableUri(Constants.DEFAULT_META_DATA_GRAPH_URI));
+    }
 
     @Override
     public void addTriple(CrawleableUri uri, Triple triple) {
@@ -109,7 +114,7 @@ public class InMemorySink implements Sink {
     /**
      * Returns the data written to the sink as a map with the crawled URI as key and
      * the RDF data as value.
-     * 
+     *
      * @return the data written to the sink.
      */
     public Map<String, Model> getCrawledRdfData() {
@@ -119,7 +124,7 @@ public class InMemorySink implements Sink {
     /**
      * Returns the data written to the sink as a map with the crawled URI as key and
      * the unstructured data as value.
-     * 
+     *
      * @return the data written to the sink.
      */
     public Map<String, List<byte[]>> getCrawledUnstructuredData() {
@@ -128,7 +133,7 @@ public class InMemorySink implements Sink {
 
     /**
      * Returns the status of the sink.
-     * 
+     *
      * @return the status of the sink.
      */
     public boolean isSinkHealthy() {
@@ -161,4 +166,5 @@ public class InMemorySink implements Sink {
             LOGGER.error("Error while reading data from stream. The data won't be stored.", e);
         }
     }
+
 }
