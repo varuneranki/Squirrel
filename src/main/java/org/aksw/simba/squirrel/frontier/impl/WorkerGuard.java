@@ -4,6 +4,8 @@ import org.aksw.simba.squirrel.components.FrontierComponent;
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
 import org.aksw.simba.squirrel.rabbit.msgs.CrawlingResult;
 import org.aksw.simba.squirrel.worker.impl.AliveMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -14,6 +16,9 @@ import java.util.concurrent.TimeUnit;
  * information to the {@link FrontierComponent}.
  */
 public class WorkerGuard {
+
+    @SuppressWarnings("unused")
+    private static final Logger LOGGER = LoggerFactory.getLogger(FrontierComponent.class);
 
     /**
      * A map from {@link org.aksw.simba.squirrel.worker.Worker} id to a timestamp that
@@ -101,7 +106,9 @@ public class WorkerGuard {
      */
     public void removeUrisForWorker(int idOfWorker, List<CrawleableUri> lstUrisToRemove) {
         List<CrawleableUri> lstAllUris = mapWorkerUris.get(idOfWorker);
-        lstAllUris.removeAll(lstUrisToRemove);
+        if (lstAllUris != null) {
+            lstAllUris.removeAll(lstUrisToRemove);
+        }
         mapWorkerUris.remove(idOfWorker, lstAllUris);
     }
 

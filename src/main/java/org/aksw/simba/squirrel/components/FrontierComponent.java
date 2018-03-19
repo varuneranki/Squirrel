@@ -1,12 +1,5 @@
 package org.aksw.simba.squirrel.components;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Semaphore;
-
 import org.aksw.simba.squirrel.configurator.RDBConfiguration;
 import org.aksw.simba.squirrel.configurator.SeedConfiguration;
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
@@ -40,7 +33,6 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Semaphore;
 
 public class FrontierComponent extends AbstractComponent implements RespondingDataHandler {
@@ -128,27 +120,38 @@ public class FrontierComponent extends AbstractComponent implements RespondingDa
 
         if (deserializedData != null) {
             if (deserializedData instanceof UriSetRequest) {
-                responseToUriSetRequest(handler, responseQueueName, correlId);
+                responseToUriSetRequest(handler, responseQueueName, correlId, (UriSetRequest) deserializedData);
             } else if (deserializedData instanceof UriSet) {
                 LOGGER.trace("Received a set of URIs (size={}).", ((UriSet) deserializedData).uris.size());
                 frontier.addNewUris(((UriSet) deserializedData).uris);
             } else if (deserializedData instanceof CrawlingResult) {
                 LOGGER.trace("Received the message that the crawling for {} URIs is done.",
                     ((CrawlingResult) deserializedData).crawledUris);
-                frontier.crawlingDone(((CrawlingResult) deserializedData).crawledUris, ((CrawlingResult) deserializedData).newUris);
+                CrawlingResult crawlingResult = (CrawlingResult) deserializedData;
+                frontier.crawlingDone(crawlingResult.crawledUris, ((CrawlingResult) deserializedData).newUris);
+                workerGuard.removeUrisForWorker(crawlingResult.idOfWorker, crawlingResult.crawledUris);
+            } else if (deserializedData instanceof AliveMessage) {
+                AliveMessage message = (AliveMessage) deserializedData;
+                int idReceived = message.getIdOfWorker();
+                LOGGER.trace("Received alive message from worker with id " + idReceived);
+                workerGuard.putIntoTimestamps(idReceived);
             } else {
                 LOGGER.warn("Received an unknown object {}. It will be ignored.", deserializedData.toString());
             }
         }
     }
 
-    private void responseToUriSetRequest(ResponseHandler handler, String responseQueueName, String correlId) {
+    private void responseToUriSetRequest(ResponseHandler handler, String responseQueueName, String correlId, UriSetRequest uriSetRequest) {
         if (handler != null) {
             try {
                 List<CrawleableUri> uris = frontier.getNextUris();
                 LOGGER.trace("Responding with a list of {} uris.",
                     uris == null ? "null" : Integer.toString(uris.size()));
                 handler.sendResponse(serializer.serialize(new UriSet(uris)), responseQueueName, correlId);
+
+                if (uris != null && uris.size() > 0) {
+                    workerGuard.putUrisForWorker(uriSetRequest.getIdOfWorker(), uris);
+                }
             } catch (IOException e) {
                 LOGGER.error("Couldn't serialize new URI set.", e);
             }

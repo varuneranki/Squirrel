@@ -1,8 +1,5 @@
 package org.aksw.simba.squirrel.components;
 
-import java.io.File;
-import java.util.Map;
-
 import org.aksw.simba.squirrel.configurator.RDBConfiguration;
 import org.aksw.simba.squirrel.configurator.SeedConfiguration;
 import org.aksw.simba.squirrel.configurator.WhiteListConfiguration;
@@ -10,19 +7,30 @@ import org.aksw.simba.squirrel.data.uri.filter.InMemoryKnownUriFilter;
 import org.aksw.simba.squirrel.data.uri.filter.KnownUriFilter;
 import org.aksw.simba.squirrel.data.uri.filter.RDBKnownUriFilter;
 import org.aksw.simba.squirrel.data.uri.filter.RegexBasedWhiteListFilter;
+import org.aksw.simba.squirrel.data.uri.serialize.Serializer;
 import org.aksw.simba.squirrel.data.uri.serialize.java.GzipJavaUriSerializer;
 import org.aksw.simba.squirrel.frontier.impl.FrontierImpl;
 import org.aksw.simba.squirrel.queue.InMemoryQueue;
 import org.aksw.simba.squirrel.queue.RDBQueue;
 import org.aksw.simba.squirrel.rabbit.RPCServer;
+import org.hobbit.core.data.RabbitQueue;
+import org.hobbit.core.rabbit.DataReceiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
 
 public class WhiteListFrontierComponent extends FrontierComponent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WhiteListFrontierComponent.class);
 
     private KnownUriFilter filter;
+
+    private Serializer serializer;
+
+
+
+
 
     @Override
     public void init() throws Exception {
@@ -53,10 +61,10 @@ public class WhiteListFrontierComponent extends FrontierComponent {
         }
 
         // Build frontier
-        frontier = new FrontierImpl(filter, queue);
+        org.aksw.simba.squirrel.frontier.Frontier frontier = new FrontierImpl(filter, queue);
 
-        rabbitQueue = this.incomingDataQueueFactory.createDefaultRabbitQueue(FRONTIER_QUEUE_NAME);
-        receiver = (new RPCServer.Builder()).responseQueueFactory(outgoingDataQueuefactory).dataHandler(this)
+        RabbitQueue rabbitQueue = this.incomingDataQueueFactory.createDefaultRabbitQueue(FRONTIER_QUEUE_NAME);
+        DataReceiver receiver = (new RPCServer.Builder()).responseQueueFactory(outgoingDataQueuefactory).dataHandler(this)
             .maxParallelProcessedMsgs(100).queue(rabbitQueue).build();
 
         SeedConfiguration seedConfiguration = SeedConfiguration.getSeedConfiguration();
