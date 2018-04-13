@@ -22,7 +22,6 @@
     rdfs:Comment "Sink used to store the Content(metadata and data) of URI collected"@en;
     sq:numberOfTriples "number of triples";
     sq:hostedOn "LocalHost:3030"
-    rdfs:Comment "store Meta Data of the Crawled URI";
     prov:wasAssociatedWith :Worker_ID;
     sq:status "successfull";
 .
