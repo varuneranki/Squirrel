@@ -14,30 +14,36 @@
     prov:endedAtTime "2012-04-30T20:40:40"^^xsd:dateTime;
     prov:qualifiedAssociation [
       a prov:Association;
-      prov:agent :worker_1;
-      
-      # The worker does the crawling activity.
-      prov:hadPlan :crawling; 
+      prov:agent :worker_ID;
+      rdfs:comment "Worker had crawling plan"@en;
+      prov:hadPlan :crawling;
    ];
+    rdfs:Comment "Sink used to store the Content(metadata and data) of URI collected"@en;
+    sq:numberOfTriples "number of triples";
+    sq:hostedOn "LocalHost:3030"
+    prov:wasAssociatedWith :Worker_ID;
+    sq:status "unsuccessfull";
 .
 
-:worker_1
-    a prov:Agent;
+:worker_ID
+    a prov:Agent,Prov:Association;       ## Association with CrawlingActivity
+    rdfs:comment "Worker_Id collects URI, Unstructured data and Meta Data"@en;;
 .
 
 :crawling
-    a prov:Plan, prov:Entity;
+    a prov:Plan, prov:Entity;  ## A plan is an entity that represents a set of actions or steps intended by one or more agents to achieve some goals.
     rdfs:comment "steps: http fetcher, rdf analyzer, sink"@en;
 .
 
 :resultgraph
     a prov:Entity;
     prov:wasGeneratedBy :crawlingActivity_1;
+    sq:uriName uri;
 .
 
-:numberoftriples
-    a prov:Entity;
-    sq:Status :crawlingActivity_1;
+:Uri
+a prov:Entity;
 .
+
 
 
