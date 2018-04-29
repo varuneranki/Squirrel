@@ -47,7 +47,8 @@ public class SparqlBasedSink implements Sink {
 
     }
 
-    public void addMetadata(final CrawlingActivity crawlingActivity) {
+    public void addMetadata(final CrawlingActivity crawlingActivity)
+    {
         List<Triple> lstTriples = new ArrayList<>();
         Node nodeCrawlingActivity = new Node_Variable("crawlingActivity" + crawlingActivity.getId());
         lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("prov:startedAtTime"), new Node_Variable(crawlingActivity.getDateStarted())));
@@ -56,19 +57,22 @@ public class SparqlBasedSink implements Sink {
         lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("prov:wasAssociatedWith"), new Node_Variable(String.valueOf(crawlingActivity.getWorker().getId()))));
         lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("sq:numberOfTriples"), new Node_Variable(String.valueOf(crawlingActivity.getNumTriples()))));
         lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("sq:hostedOn"), new Node_Variable(datasetPrefix)));
-//        for (CrawleableUri uri : crawlingActivity.getMapUri().keySet()) {
-//            lstTriples.add(new Triple(new Node_Variable(uri.toString()), new Node_Variable("prov:wasGeneratedBy"), nodeCrawlingActivity));
-//
-//        }
+        for (CrawleableUri uri : crawlingActivity.getMapUri().keySet())
+        {
+             String k = uri.toString();
+             String kstr = k.replace("\"", "");
+          lstTriples.add(new Triple(new Node_Variable(kstr), new Node_Variable("sq:uriName"), nodeCrawlingActivity));
+        }
 
-        lstTriples.forEach(triple -> {
-
+        lstTriples.forEach(triple ->
+        {
             UpdateRequest request = UpdateFactory.create(QueryGenerator.getInstance().getAddQuery(String.valueOf(crawlingActivity.getId()), triple, true));
             UpdateProcessor proc = UpdateExecutionFactory.createRemote(request, strMetaDatasetUriUpdate);
             proc.execute();
         });
 
     }
+
 
     public int getNumberOfTriplesForGraph(CrawleableUri uri) {
         QueryExecution q = QueryExecutionFactory.sparqlService(strContentDatasetUriQuery,
