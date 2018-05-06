@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.text.*;
 
 /**
  * Representation of Crawling activity. A crawling activity is started by a single worker. So, it contains a bunch of Uris
@@ -58,18 +59,19 @@ public class CrawlingActivity {
     /**
      * Constructor
      *
-     * @param listUri
+     * @param Uri
      * @param worker
      * @param sink
      */
-    public CrawlingActivity(List<CrawleableUri> listUri, Worker worker, Sink sink) {
+    public CrawlingActivity(CrawleableUri Uri, Worker worker, Sink sink) {
         this.worker = worker;
         this.dateStarted = new Date();
         this.status = CrawlingActivityState.STARTED;
-        mapUri = new HashedMap();
-        for (CrawleableUri uri : listUri) {
+       mapUri = new HashedMap();
+       /* for (CrawleableUri uri : listUri) {
             mapUri.put(uri, CrawlingURIState.UNKNOWN);
-        }
+        }*/
+        mapUri.put(Uri,CrawlingURIState.UNKNOWN);
         id = UUID.randomUUID();
         this.sink = sink;
     }
@@ -106,24 +108,24 @@ public class CrawlingActivity {
             numTriples = -1;
         }
     }
-
     public UUID getId() {
         return id;
     }
 
     public String getDateStarted() {
-        String dateString = dateStarted.toString();
-        dateString = dateString.replace(" ", "_");
-        dateString = dateString.replace(":", "_");
-        return dateString;
+        SimpleDateFormat ft =
+            new SimpleDateFormat ("yyyy-MM-dd'T'hh:mm:ss");
+
+        String dStarted = ft.format(dateStarted).toString();
+        return dStarted;
     }
 
     public String getDateEnded() {
 
-        String dateString = dateEnded.toString();
-        dateString = dateString.replace(" ", "_");
-        dateString = dateString.replace(":", "_");
-        return dateString;
+        SimpleDateFormat ft =
+            new SimpleDateFormat ("yyyy-MM-dd'T'hh:mm:ss");
+        String dEnded = ft.format(dateEnded).toString();
+        return dEnded;
     }
 
     public CrawlingActivityState getStatus() {
@@ -133,6 +135,7 @@ public class CrawlingActivity {
     public Worker getWorker() {
         return worker;
     }
+
 
     public enum CrawlingURIState {SUCCESSFUL, UNKNOWN, FAILED}
 
