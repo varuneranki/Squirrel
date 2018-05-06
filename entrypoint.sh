@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+
+
 function wait_for_it()
 {
     local serviceport=$1

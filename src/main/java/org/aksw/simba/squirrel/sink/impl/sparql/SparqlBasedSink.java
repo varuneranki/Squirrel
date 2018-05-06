@@ -60,8 +60,8 @@ public class SparqlBasedSink implements Sink {
         for (CrawleableUri uri : crawlingActivity.getMapUri().keySet())
         {
              String k = uri.toString();
-             String kstr = k.replace("\"", " ");
-             lstTriples.add(new Triple(new Node_Variable(kstr), new Node_Variable("sq:uriName"), nodeCrawlingActivity));
+             String kstr = k.replace("\"", "");
+             lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("prov:wasGeneratedBy"), new Node_Variable(kstr)));
         }
 
         lstTriples.forEach(triple ->
