@@ -196,7 +196,8 @@ public class WorkerImpl implements Worker, Closeable {
                         + "\". It will be ignored.", e);
                 }
             }
-            crawlingActivity.finishActivity();
+            //TODO add provenace as global var
+            crawlingActivity.finishActivity(null);
             // classify URIs
             //for (CrawleableUri uri : newUris) {
             uriProcessor.recognizeUriType(uri);

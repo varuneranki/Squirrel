@@ -15,6 +15,8 @@ import org.apache.jena.update.UpdateRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Provenance {
@@ -30,7 +32,7 @@ public class Provenance {
     }
 
     public void addMetadata(final CrawlingActivity crawlingActivity) {
-        ConcurrentLinkedQueue<Triple> lstTriples = new ConcurrentLinkedQueue<>();
+        List<Triple> lstTriples = new LinkedList<>();
         Node nodeCrawlingActivity = NodeFactory.createLiteral("crawlingActivity" + crawlingActivity.getId());
         lstTriples.add(new Triple(nodeCrawlingActivity, NodeFactory.createURI("prov:startedAtTime"), NodeFactory.createLiteral(crawlingActivity.getDateStarted())));
         lstTriples.add(new Triple(nodeCrawlingActivity, NodeFactory.createURI("prov:endedAtTime"), NodeFactory.createLiteral(crawlingActivity.getDateEnded())));
@@ -53,20 +55,6 @@ public class Provenance {
     }
 
 
-    public int getNumberOfTriplesForGraph(CrawleableUri uri) {
-        return -1;
-        //TODO modify with the changes in deduplication branch (sink.getTriples.size())
 
-        /*QueryExecution q = QueryExecutionFactory.sparqlService(queryDatasetURI,
-            QueryGenerator.getInstance().getSelectAllQuery(uri));
-        ResultSet results = q.execSelect();
-        int sum = 0;
-        while (results.hasNext()) {
-            results.next();
-            sum++;
-        }
-        return sum;
-        */
-    }
 
 }

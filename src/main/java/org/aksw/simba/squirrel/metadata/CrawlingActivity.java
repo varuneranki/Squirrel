@@ -89,10 +89,15 @@ public class CrawlingActivity {
 
     }
 
-    public void finishActivity() {
+    public void finishActivity(Provenance provenance) {
         countTriples();
         dateEnded = new Date();
         status = CrawlingActivityState.ENDED;
+        if (provenance != null) {
+            provenance.addMetadata(this);
+        } else {
+            LOGGER.error("Got null as provenace object. MetaData will not be stored.");
+        }
     }
 
     /**
@@ -127,6 +132,29 @@ public class CrawlingActivity {
             new SimpleDateFormat ("yyyy-MM-dd'T'hh:mm:ss");
         String dEnded = ft.format(dateEnded).toString();
         return dEnded;
+    }
+
+    public int getNumberOfTriplesForGraph(CrawleableUri uri) {
+        return -1;
+        //TODO modify with the changes in deduplication branch (sink.getTriples.size())
+        /*if (sink instanceof AdvancedSink) {
+            AdvancedSink advSink = (AdvancedSink) sink;
+            return advSink.getTriples.size();
+        }else{
+            LOGGER.error("Sink is no advanced sink. Could not get number of triples from graph.");
+            return -1;
+        }*/
+
+        /*QueryExecution q = QueryExecutionFactory.sparqlService(queryDatasetURI,
+            QueryGenerator.getInstance().getSelectAllQuery(uri));
+        ResultSet results = q.execSelect();
+        int sum = 0;
+        while (results.hasNext()) {
+            results.next();
+            sum++;
+        }
+        return sum;
+        */
     }
 
     public CrawlingActivityState getStatus() {
