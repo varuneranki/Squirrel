@@ -33,26 +33,32 @@ public class QueryGenerator {
     }
 
     /**
-     *Return an Add Query for the given uri and its triples.
-     * @param uri the uri where the triples found.
+     * Return an Add Query for the given uri and its triples.
+     *
+     * @param uri                 the uri where the triples found.
      * @param listBufferedTriples the given list of triples.
      * @return The generated query.
      */
     public String getAddQuery(CrawleableUri uri, ConcurrentLinkedQueue<Triple> listBufferedTriples) {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("INSERT DATA { Graph <");
+        stringBuilder.append("INSERT DATA { ");
+        if (uri != null) {
+            stringBuilder.append("Graph <");
             stringBuilder.append(uri.getUri());
             stringBuilder.append("> { ");
+        }
         for (Triple triple : listBufferedTriples) {
-                stringBuilder.append("<");
-                stringBuilder.append(triple.getSubject());
-                stringBuilder.append("> <");
-                stringBuilder.append(triple.getPredicate());
-                stringBuilder.append("> <");
-                stringBuilder.append(triple.getObject());
-                stringBuilder.append("> . ");
-            }
+            stringBuilder.append("<");
+            stringBuilder.append(triple.getSubject());
+            stringBuilder.append("> <");
+            stringBuilder.append(triple.getPredicate());
+            stringBuilder.append("> <");
+            stringBuilder.append(triple.getObject());
+            stringBuilder.append("> . ");
+        }
+        if (uri != null) {
             stringBuilder.append("} ");
+        }
         stringBuilder.append("}");
         return stringBuilder.toString();
     }

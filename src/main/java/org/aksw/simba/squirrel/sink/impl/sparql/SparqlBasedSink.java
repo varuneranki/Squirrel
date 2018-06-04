@@ -54,35 +54,30 @@ public class SparqlBasedSink implements Sink {
         this.queryDatasetURI = queryDatasetURI;
     }
 
-    public void addMetadata(final CrawlingActivity crawlingActivity)
-    {
-        List<Triple> lstTriples = new ArrayList<>();
+    public void addMetadata(final CrawlingActivity crawlingActivity) {
+        ConcurrentLinkedQueue<Triple> lstTriples = new ConcurrentLinkedQueue<>();
         Node nodeCrawlingActivity = new Node_Variable("crawlingActivity" + crawlingActivity.getId());
         lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("prov:startedAtTime"), new Node_Variable(crawlingActivity.getDateStarted())));
         lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("prov:endedAtTime"), new Node_Variable(crawlingActivity.getDateEnded())));
         lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("sq:Status"), new Node_Variable(crawlingActivity.getStatus().toString())));
         lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("prov:wasAssociatedWith"), new Node_Variable(String.valueOf(crawlingActivity.getWorker().getId()))));
         lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("sq:numberOfTriples"), new Node_Variable(String.valueOf(crawlingActivity.getNumTriples()))));
-        lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("sq:hostedOn"), new Node_Variable(datasetPrefix)));
-        for (CrawleableUri uri : crawlingActivity.getMapUri().keySet())
-        {
-             String k = uri.toString();
-             String kstr = k.replace("\"", "");
-             lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("prov:wasGeneratedBy"), new Node_Variable(kstr)));
+        //TODO lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("sq:hostedOn"), new Node_Variable(datasetPrefix)));
+        for (CrawleableUri uri : crawlingActivity.getMapUri().keySet()) {
+            String k = uri.toString();
+            String kstr = k.replace("\"", "");
+            lstTriples.add(new Triple(nodeCrawlingActivity, new Node_Variable("prov:wasGeneratedBy"), new Node_Variable(kstr)));
         }
 
-        lstTriples.forEach(triple ->
-        {
-            UpdateRequest request = UpdateFactory.create(QueryGenerator.getInstance().getAddQuery(String.valueOf(crawlingActivity.getId()), triple, true));
-            UpdateProcessor proc = UpdateExecutionFactory.createRemote(request, strMetaDatasetUriUpdate);
-            proc.execute();
-        });
+        UpdateRequest request = UpdateFactory.create(QueryGenerator.getInstance().getAddQuery(null, lstTriples));
+        UpdateProcessor proc = UpdateExecutionFactory.createRemote(request, updateDatasetURI);
+        proc.execute();
 
     }
 
 
     public int getNumberOfTriplesForGraph(CrawleableUri uri) {
-        QueryExecution q = QueryExecutionFactory.sparqlService(strContentDatasetUriQuery,
+        QueryExecution q = QueryExecutionFactory.sparqlService(queryDatasetURI,
             QueryGenerator.getInstance().getSelectAllQuery(uri));
         ResultSet results = q.execSelect();
         int sum = 0;
@@ -117,6 +112,7 @@ public class SparqlBasedSink implements Sink {
 
     /**
      * Method to send all buffered triples to the database
+     *
      * @param uri
      * @param tripleList
      */

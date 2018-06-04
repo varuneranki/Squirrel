@@ -36,7 +36,6 @@ import static org.apache.jena.assembler.JA.uri;
  * Standard implementation of the {@link Worker} interface.
  *
  * @author Michael R&ouml;der (roeder@informatik.uni-leipzig.de)
- *
  */
 public class WorkerImpl implements Worker, Closeable {
 
@@ -56,7 +55,7 @@ public class WorkerImpl implements Worker, Closeable {
     protected String domainLogFile = null;
     protected long waitingTime;
     protected boolean terminateFlag;
-    private final int id = (int)Math.floor(Math.random()*100000);
+    private final int id = (int) Math.floor(Math.random() * 100000);
     private boolean sendAliveMessages;
 
     /**
@@ -99,7 +98,6 @@ public class WorkerImpl implements Worker, Closeable {
      * @param serializer Serializer for serializing and deserializing URIs.
      * @param collector  The UriCollector implementation used by this worker.
      * @deprecated Because a default configuration of the UriCollector is created.
-     *
      */
     @Deprecated
     public WorkerImpl(Frontier frontier, Sink sink, RobotsManager manager, Serializer serializer,
@@ -182,37 +180,33 @@ public class WorkerImpl implements Worker, Closeable {
             CrawlingActivity crawlingActivity = new CrawlingActivity(uri, this, sink);
             if (uri == null) {
                 LOGGER.error("Got null as CrawleableUri object. It will be ignored.");
+                crawlingActivity.setState(uri, CrawlingActivity.CrawlingURIState.FAILED);
             } else if (uri.getUri() == null) {
                 LOGGER.error("Got a CrawleableUri object with getUri()=null. It will be ignored.");
+                crawlingActivity.setState(uri, CrawlingActivity.CrawlingURIState.FAILED);
             } else {
                 try {
                     performCrawling(uri, newUris);
                     crawledUris.add(uri);
                     //TODO crawlingActivity.setState(uri, CrawlingActivity.CrawlingURIState.SUCCESSFUL);
                 } catch (Exception e) {
-                    LOGGER.error("Unhandled exception whily crawling \"" + uri.getUri().toString()
+                    crawlingActivity.setState(uri, CrawlingActivity.CrawlingURIState.FAILED);
                     crawlingActivity.setState(uri, CrawlingActivity.CrawlingURIState.FAILED);
                     LOGGER.error("Unhandled exception while crawling \"" + uri.getUri().toString()
                         + "\". It will be ignored.", e);
                 }
             }
-
+            crawlingActivity.finishActivity();
             // classify URIs
             //for (CrawleableUri uri : newUris) {
             uriProcessor.recognizeUriType(uri);
 
-        // send results to the Frontier
-        //TODO
-//        crawlingActivity.finishActivity();
-//        if (sink instanceof RDFSink) {
-//            ((RDFSink) sink).addMetadata(crawlingActivity);
-//        } else {
-//            //TODO ADD METADATA IF SINK IS NOT RDFSINK
-//        }
-        frontier.crawlingDone(crawledUris, newUris);
+            // send results to the Frontier
+            frontier.crawlingDone(crawledUris, newUris);
+        }
+
     }
 
-}
     @Override
     public void performCrawling(CrawleableUri uri, List<CrawleableUri> newUris) {
         // check robots.txt
