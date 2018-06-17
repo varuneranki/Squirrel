@@ -1,17 +1,21 @@
 package org.aksw.simba.squirrel.metadata;
 
+
+import org.aksw.simba.squirrel.analyzer.Analyzer;
+import org.aksw.simba.squirrel.analyzer.impl.RDFAnalyzer;
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
+import org.aksw.simba.squirrel.fetcher.http.HTTPFetcher;
 import org.aksw.simba.squirrel.sink.Sink;
 import org.aksw.simba.squirrel.sink.impl.sparql.SparqlBasedSink;
 import org.aksw.simba.squirrel.worker.Worker;
 import org.apache.commons.collections.map.HashedMap;
+import org.apache.jena.graph.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import javax.swing.*;
+import java.io.InputStream;
+import java.util.*;
 import java.text.*;
 
 /**
@@ -57,6 +61,8 @@ public class CrawlingActivity {
      */
     private Sink sink;
 
+    CrawleableUri uri;
+
     /**
      * Constructor
      *
@@ -72,9 +78,34 @@ public class CrawlingActivity {
        /* for (CrawleableUri uri : listUri) {
             mapUri.put(uri, CrawlingURIState.UNKNOWN);
         }*/
+       this.uri = Uri;
         mapUri.put(Uri,CrawlingURIState.UNKNOWN);
         id = UUID.randomUUID();
         this.sink = sink;
+    }
+
+
+    public void addStep (Object k){
+         uri.addData(k.getClass().getSimpleName().toString(),k);
+    }
+
+
+    public String getHadPlan()
+    {
+        for(Object object : Object.class.getClasses()) {
+            if (object instanceof CrawleableUri) {
+                addStep(object);
+            }
+        }
+        addStep(RDFAnalyzer.class);
+        addStep(HTTPFetcher.class);
+        ArrayList<String> list = new ArrayList<>();
+        for(String k: uri.getData().keySet())
+        {
+            list.add(k);
+
+        }
+        return list.toString();
     }
 
     public Map<CrawleableUri, CrawlingURIState> getMapUri() {
@@ -99,7 +130,11 @@ public class CrawlingActivity {
             LOGGER.error("Got null as provenace object. MetaData will not be stored.");
         }
     }
+    public CrawleableUri getUri()
+    {
+        return uri;
 
+    }
     /**
      * count the triples of the activity.
      */
