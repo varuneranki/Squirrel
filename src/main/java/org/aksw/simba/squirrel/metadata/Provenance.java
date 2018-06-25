@@ -45,16 +45,16 @@ public class Provenance {
         Node nodeCrawlingActivity = NodeFactory.createLiteral("crawlingActivity" + crawlingActivity.getId());
 
 
-        lstTriples.add(new Triple(nodeCrawlingActivity, NodeFactory.createURI("prov:startedAtTime"), NodeFactory.createLiteral(crawlingActivity.getDateStarted())));
-        lstTriples.add(new Triple(nodeCrawlingActivity, NodeFactory.createURI("prov:endedAtTime"), NodeFactory.createLiteral(crawlingActivity.getDateEnded())));
-        lstTriples.add(new Triple(nodeCrawlingActivity, NodeFactory.createURI("sq:Status"), NodeFactory.createLiteral(crawlingActivity.getStatus().toString())));
-        lstTriples.add(new Triple(nodeCrawlingActivity, NodeFactory.createURI("prov:wasAssociatedWith"), NodeFactory.createLiteral(String.valueOf(crawlingActivity.getWorker().getId()))));
-        lstTriples.add(new Triple(nodeCrawlingActivity, NodeFactory.createURI("sq:numberOfTriples"), NodeFactory.createLiteral(String.valueOf(crawlingActivity.getNumTriples()))));
-        lstTriples.add(new Triple(nodeCrawlingActivity,NodeFactory.createURI("prov:qualifiedAssociation"),NodeFactory.createLiteral("prov:Association")));
-        lstTriples.add(new Triple(NodeFactory.createLiteral("prov:Association"),NodeFactory.createLiteral("prov:agent"),NodeFactory.createLiteral(String.valueOf(crawlingActivity.getWorker().getId()))));
+        lstTriples.add(new Triple(nodeCrawlingActivity,Prov.startedAtTime.asNode(), NodeFactory.createLiteral(crawlingActivity.getDateStarted())));
+        lstTriples.add(new Triple(nodeCrawlingActivity,Prov.endedAtTime.asNode(), NodeFactory.createLiteral(crawlingActivity.getDateEnded())));
+        lstTriples.add(new Triple(nodeCrawlingActivity,Sq.status.asNode(), NodeFactory.createLiteral(crawlingActivity.getStatus().toString())));
+        lstTriples.add(new Triple(nodeCrawlingActivity, Prov.wasAssociatedWith.asNode(), NodeFactory.createLiteral(String.valueOf(crawlingActivity.getWorker().getId()))));
+        lstTriples.add(new Triple(nodeCrawlingActivity, Sq.numberOfTriples.asNode(), NodeFactory.createLiteral(String.valueOf(crawlingActivity.getNumTriples()))));
+        lstTriples.add(new Triple(nodeCrawlingActivity,Prov.qualifiedAssociation.asNode(),NodeFactory.createLiteral(Prov.Association.toString())));
+        lstTriples.add(new Triple(NodeFactory.createLiteral(Prov.Association.toString()),NodeFactory.createLiteral(Prov.agent.toString()),NodeFactory.createLiteral(String.valueOf(crawlingActivity.getWorker().getId()))));
         //TODO lstTriples.add(new Triple(nodeCrawlingActivity, NodeFactory.createURI("sq:hostedOn"), NodeFactory.createLiteral(datasetPrefix)));
-        lstTriples.add(new Triple(nodeCrawlingActivity,NodeFactory.createURI("prov:hadPlan"),NodeFactory.createLiteral(crawlingActivity.getHadPlan())));
-        lstTriples.add(new Triple(nodeCrawlingActivity, NodeFactory.createURI("prov:wasGeneratedBy"), NodeFactory.createURI(crawlingActivity.getUri().toString())));
+        lstTriples.add(new Triple(nodeCrawlingActivity,Prov.hadPlan.asNode(),NodeFactory.createLiteral(crawlingActivity.getHadPlan())));
+        lstTriples.add(new Triple(nodeCrawlingActivity, Prov.wasGeneratedBy.asNode(), NodeFactory.createURI(crawlingActivity.getUri().toString())));
 
 
 
