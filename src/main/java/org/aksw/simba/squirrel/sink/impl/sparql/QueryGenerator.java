@@ -41,6 +41,9 @@ public class QueryGenerator {
      */
     public String getAddQuery(CrawleableUri uri, ConcurrentLinkedQueue<Triple> listBufferedTriples) {
         StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>\n");
+        stringBuilder.append("PREFIX prov: <http://www.w3.org/ns/prov-o#>\n");
+        stringBuilder.append("PREFIX sq: <https://w3id.org/squirrel#>\n");
         stringBuilder.append("INSERT DATA { ");
         if (uri != null) {
             stringBuilder.append("Graph <");
