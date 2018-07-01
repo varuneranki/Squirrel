@@ -1,6 +1,7 @@
 package org.aksw.simba.squirrel.data.uri.filter;
 
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
+import org.aksw.simba.squirrel.metadata.CrawlingActivity;
 
 import java.util.List;
 
@@ -51,4 +52,8 @@ public interface KnownUriFilter extends UriFilter {
      * @return the number of lines in that database
      */
     public long count();
+    /**
+     * counter for the Re-crawling
+     */
+    public long getCrawlingCounterUri(CrawleableUri uri);
 }

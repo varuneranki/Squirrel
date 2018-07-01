@@ -1,12 +1,14 @@
 package org.aksw.simba.squirrel.data.uri.filter;
 
 import com.rethinkdb.RethinkDB;
+import com.rethinkdb.gen.ast.Count;
 import com.rethinkdb.model.MapObject;
 import com.rethinkdb.net.Cursor;
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
 import org.aksw.simba.squirrel.data.uri.UriType;
 import org.aksw.simba.squirrel.frontier.impl.FrontierImpl;
 import org.aksw.simba.squirrel.model.RDBConnector;
+import org.apache.commons.collections.map.HashedMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +46,7 @@ public class RDBKnownUriFilter implements KnownUriFilter, Closeable {
     private static final String COLUMN_TIMESTAMP_NEXT_CRAWL = "timestampNextCrawl";
     private static final String COLUMN_IP = "ipAddress";
     private static final String COLUMN_TYPE = "type";
+    private static final String COLUMN_CRAWL_COUNT = "crawlCountUri";
 
     /**
      * Constructor.
@@ -74,7 +77,8 @@ public class RDBKnownUriFilter implements KnownUriFilter, Closeable {
      * @param connector              Value for {@link #connector}.
      * @param r                      Value for {@link #r}.
      * @param frontierDoesRecrawling Value for {@link #frontierDoesRecrawling}.
-     */
+     **/
+
     public RDBKnownUriFilter(RDBConnector connector, RethinkDB r, boolean frontierDoesRecrawling) {
         this.connector = connector;
         this.r = r;
@@ -125,6 +129,7 @@ public class RDBKnownUriFilter implements KnownUriFilter, Closeable {
         for (CrawleableUri uri : urisToRecrawl) {
             r.db(DATABASE_NAME).table(TABLE_NAME).filter(doc -> doc.getField(COLUMN_URI).eq(uri.getUri().toString())).
                 update(r.hashMap(COLUMN_CRAWLING_IN_PROCESS, true)).run(connector.connection);
+            count();
         }
 
         cursor.close();
@@ -145,6 +150,7 @@ public class RDBKnownUriFilter implements KnownUriFilter, Closeable {
         add(uri, System.currentTimeMillis(), nextCrawlTimestamp);
     }
 
+
     @Override
     public void add(CrawleableUri uri, long lastCrawlTimestamp, long nextCrawlTimestamp) {
         Cursor<HashMap> cursor = r.db(DATABASE_NAME).table(TABLE_NAME).filter(doc -> doc.getField(COLUMN_URI).eq(uri.getUri().toString())).run(connector.connection);
@@ -155,11 +161,42 @@ public class RDBKnownUriFilter implements KnownUriFilter, Closeable {
         } else {
             r.db(DATABASE_NAME)
                 .table(TABLE_NAME)
-                .insert(convertURITimestampToRDB(uri, lastCrawlTimestamp, nextCrawlTimestamp, false))
+                .insert(convertURITimestampToRDB(uri, lastCrawlTimestamp, nextCrawlTimestamp, false,1L))
                 .run(connector.connection);
         }
+        HashMap map = cursor.next();
+        long counter = (long) map.get(COLUMN_CRAWL_COUNT);
+        counter++;
+        r.db(DATABASE_NAME).table(TABLE_NAME).filter(doc->doc.getField(COLUMN_URI).eq(uri.getUri().toString())).update(r.hashMap((COLUMN_CRAWL_COUNT),counter)).run(connector.connection);
+        cursor.close();
         LOGGER.debug("Adding URI {} to the known uri filter list", uri.toString());
     }
+
+    public long getCrawlingCounterUri(CrawleableUri uri)
+    {
+        Cursor<Long> cursor = r.db(DATABASE_NAME).table(TABLE_NAME).getAll(uri.getUri().toString()).optArg("index",COLUMN_URI).g(COLUMN_CRAWL_COUNT).run(connector.connection);
+        long counter;
+        if(cursor.hasNext())
+        {
+            counter = (Long) cursor.next();
+
+        }
+        else
+        {
+            counter = 0;
+        }
+
+        cursor.close();
+        return counter;
+
+    }
+
+    public void openConnector() {
+        if (this.connector.connection == null) {
+            this.connector.open();
+        }
+    }
+
 
     private MapObject convertURIToRDB(CrawleableUri uri) {
         InetAddress ipAddress = uri.getIpAddress();
@@ -170,11 +207,11 @@ public class RDBKnownUriFilter implements KnownUriFilter, Closeable {
             .with(COLUMN_TYPE, uriType.toString());
     }
 
-    private MapObject convertURITimestampToRDB(CrawleableUri uri, long timestamp, long nextCrawlTimestamp, boolean crawlingInProcess) {
+    private MapObject convertURITimestampToRDB(CrawleableUri uri, long timestamp, long nextCrawlTimestamp, boolean crawlingInProcess, Long crawlCountUri) {
         MapObject uriMap = convertURIToRDB(uri);
         return uriMap
             .with(COLUMN_TIMESTAMP_LAST_CRAWL, timestamp).with(COLUMN_TIMESTAMP_NEXT_CRAWL, nextCrawlTimestamp)
-            .with(COLUMN_CRAWLING_IN_PROCESS, crawlingInProcess);
+            .with(COLUMN_CRAWLING_IN_PROCESS, crawlingInProcess).with(COLUMN_CRAWL_COUNT,crawlCountUri);
     }
 
     @Override
