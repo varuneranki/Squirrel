@@ -3,26 +3,30 @@ package org.aksw.simba.squirrel.metadata;
 
 import org.aksw.simba.squirrel.analyzer.Analyzer;
 import org.aksw.simba.squirrel.analyzer.impl.RDFAnalyzer;
+import org.aksw.simba.squirrel.components.FrontierComponent;
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
+import org.aksw.simba.squirrel.data.uri.filter.KnownUriFilter;
+import org.aksw.simba.squirrel.data.uri.filter.RDBKnownUriFilter;
 import org.aksw.simba.squirrel.fetcher.http.HTTPFetcher;
 import org.aksw.simba.squirrel.sink.Sink;
+import org.aksw.simba.squirrel.sink.TripleBasedSink;
 import org.aksw.simba.squirrel.sink.impl.sparql.SparqlBasedSink;
 import org.aksw.simba.squirrel.worker.Worker;
 import org.apache.commons.collections.map.HashedMap;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.jena.graph.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
-import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.*;
-import java.text.*;
 
 /**
  * Representation of Crawling activity. A crawling activity is started by a single worker. So, it contains a bunch of Uris
  * and some meta data, like timestamps for the start and end of the crawling activity.
  */
 public class CrawlingActivity {
+    KnownUriFilter knownUriFilter;
 
     /**
      * The logger.
@@ -31,7 +35,7 @@ public class CrawlingActivity {
     /**
      * A unique id.
      */
-    private UUID id;
+    private String id;
     /**
      * When the activity has started.
      */
@@ -40,51 +44,63 @@ public class CrawlingActivity {
      * When the activity has ended.
      */
     private Date dateEnded;
+
     /**
-     * A mapping from uris to states indicating whether they have been crawled successfully.
+     * The uri for the crawling activity.
      */
-    private Map<CrawleableUri, CrawlingURIState> mapUri;
+    private CrawleableUri uri;
+
     /**
-     * A state of the activity.
+     * The graph where the uri is stored.
      */
-    private CrawlingActivityState status;
+    private String graphId;
+
+    /**
+     * The crawling state of the uri.
+     */
+    private CrawlingURIState state;
+
     /**
      * The worker that has been assigned the activity.
      */
     private Worker worker;
+
     /**
      * Number of triples crawled by this activity.
      */
     private int numTriples;
+
     /**
      * The sink used for the activity.
      */
-    private Sink sink;
-
-    CrawleableUri uri;
+    private TripleBasedSink sink;
 
     /**
      * Constructor
      *
-     * @param Uri
+     * @param uri
      * @param worker
      * @param sink
      */
-    public CrawlingActivity(CrawleableUri Uri, Worker worker, Sink sink) {
+    public CrawlingActivity(CrawleableUri uri, Worker worker, TripleBasedSink sink) {
         this.worker = worker;
         this.dateStarted = new Date();
-        this.status = CrawlingActivityState.STARTED;
-       mapUri = new HashedMap();
-       /* for (CrawleableUri uri : listUri) {
-            mapUri.put(uri, CrawlingURIState.UNKNOWN);
-        }*/
-       this.uri = Uri;
-        mapUri.put(Uri,CrawlingURIState.UNKNOWN);
-        id = UUID.randomUUID();
+        this.uri = uri;
+        this.state = CrawlingURIState.UNKNOWN;
+        if (sink instanceof SparqlBasedSink) {
+            graphId = ((SparqlBasedSink) sink).getGraphId(uri);
+        }
+        id = "activity:" + graphId;
         this.sink = sink;
     }
 
-
+    public void setState(CrawlingURIState state) {
+        this.state = state;
+    }
+    public CrawleableUri getUri ()
+    {
+        return uri;
+    }
     public void addStep (Object k){
          uri.addData(k.getClass().getSimpleName().toString(),k);
     }
@@ -108,9 +124,6 @@ public class CrawlingActivity {
         return list.toString();
     }
 
-    public Map<CrawleableUri, CrawlingURIState> getMapUri() {
-        return mapUri;
-    }
 
     public int getNumTriples() {
         return numTriples;
@@ -120,36 +133,32 @@ public class CrawlingActivity {
 
     }
 
-    public void finishActivity(Provenance provenance) {
+    public void finishActivity() {
         countTriples();
         dateEnded = new Date();
-        status = CrawlingActivityState.ENDED;
-        if (provenance != null) {
-            provenance.addMetadata(this);
-        } else {
-            LOGGER.error("Got null as provenace object. MetaData will not be stored.");
-        }
-    }
-    public CrawleableUri getUri()
-    {
-        return uri;
 
     }
+    public Long getCounterforCrawler (CrawleableUri uri)
+    {
+       return  knownUriFilter.getCrawlingCounterUri(uri);
+    }
+
     /**
      * count the triples of the activity.
      */
     private void countTriples() {
         int sum = 0;
         if (sink instanceof SparqlBasedSink) {
-            for (CrawleableUri uri : mapUri.keySet()) {
-                //sum += ((SparqlBasedSink) sink).getNumberOfTriplesForGraph(uri);
-            }
+
+            //sum += ((SparqlBasedSink) sink).getNumberOfTriplesForGraph(uri);
+
             numTriples = sum;
         } else {
             numTriples = -1;
         }
     }
-    public UUID getId() {
+
+    public String getId() {
         return id;
     }
 
@@ -169,39 +178,21 @@ public class CrawlingActivity {
         return dEnded;
     }
 
-    public int getNumberOfTriplesForGraph(CrawleableUri uri) {
-        return -1;
-        //TODO modify with the changes in deduplication branch (sink.getTriples.size())
-        /*if (sink instanceof AdvancedSink) {
-            AdvancedSink advSink = (AdvancedSink) sink;
-            return advSink.getTriples.size();
-        }else{
-            LOGGER.error("Sink is no advanced sink. Could not get number of triples from graph.");
-            return -1;
-        }*/
-
-        /*QueryExecution q = QueryExecutionFactory.sparqlService(queryDatasetURI,
-            QueryGenerator.getInstance().getSelectAllQuery(uri));
-        ResultSet results = q.execSelect();
-        int sum = 0;
-        while (results.hasNext()) {
-            results.next();
-            sum++;
-        }
-        return sum;
-        */
-    }
-
-    public CrawlingActivityState getStatus() {
-        return status;
-    }
-
     public Worker getWorker() {
         return worker;
     }
 
+    public enum CrawlingURIState {SUCCESSFUL, UNKNOWN, FAILED;}
 
-    public enum CrawlingURIState {SUCCESSFUL, UNKNOWN, FAILED}
+    public CrawlingURIState getState() {
+        return state;
+    }
 
-    public enum CrawlingActivityState {STARTED, ENDED, SUCCESSFUL, FAILED}
+    public CrawleableUri getCrawleableUri() {
+        return uri;
+    }
+
+    public String getGraphId() {
+        return graphId;
+    }
 }
