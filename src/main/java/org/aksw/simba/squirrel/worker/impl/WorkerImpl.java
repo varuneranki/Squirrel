@@ -1,6 +1,6 @@
 package org.aksw.simba.squirrel.worker.impl;
 
-import com.sun.jndi.toolkit.url.Uri;
+
 import org.aksw.simba.squirrel.Constants;
 import org.aksw.simba.squirrel.analyzer.Analyzer;
 import org.aksw.simba.squirrel.analyzer.compress.impl.FileManager;
