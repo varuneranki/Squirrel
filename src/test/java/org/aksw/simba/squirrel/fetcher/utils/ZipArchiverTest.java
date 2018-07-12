@@ -1,24 +1,24 @@
 package org.aksw.simba.squirrel.fetcher.utils;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.util.zip.ZipFile;
 
+import org.junit.Assert;
 import org.junit.Test;
-
-import com.mchange.util.AssertException;
 
 public class ZipArchiverTest {
 
     @Test
-    public void testZipExtract() throws Exception{
-        String src = "C:\\Users\\kpten\\IdeaProjects\\Integration_Testing\\Squirrel\\src\\test\\resources\\sample_test.zip";
-        String dest = "C:\\Users\\kpten\\IdeaProjects\\Integration_Testing\\Squirrel\\src\\test\\resources\\extracted_files" ;
+    public void testZipExtract() throws Exception {
+
         String password = null;
-        ZipArchiver archiver = new ZipArchiver();
-        File[] data = ZipArchiver.unzip(src, dest, password);
-        assertNotNull(data);
+        String src = ZipArchiverTest.class.getClassLoader().getResource("archiverTest_files/sample_test.zip").getPath();
+        String dest = ZipArchiverTest.class.getClassLoader().getResource("archiverTest_files/expected_files").getPath();
+        int expected_files = 2;
+        File[] actual_files = ZipArchiver.unzip(src, dest, password);
+        Assert.assertEquals(expected_files, actual_files.length);
     }
 }
