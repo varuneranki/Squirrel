@@ -12,7 +12,7 @@ public interface FiniteStateMachine {
      * @param c Char.
      * @return A new finite state machine with the new state.
      */
-    FiniteStateMachine switchState(final String c);
+    void switchState(final String c);
 
     /**
      * Is the current state a final one?

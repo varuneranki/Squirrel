@@ -1,7 +1,7 @@
 package org.aksw.simba.squirrel.analyzer.impl;
 
-import org.aksw.simba.squirrel.analyzer.mime.TypeDetector;
 import org.aksw.simba.squirrel.analyzer.mime.MimeTypeDetector;
+import org.aksw.simba.squirrel.analyzer.mime.TypeDetector;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
 import org.junit.Before;

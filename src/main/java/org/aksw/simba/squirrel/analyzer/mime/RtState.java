@@ -28,7 +28,7 @@ public final class RtState implements State {
                 .filter(t -> t.isPossible(c))
                 .map(Transition::state)
                 .findAny()
-                .orElseThrow(() -> new IllegalArgumentException("Input not accepted: " + c));
+                .get();
     }
 
     public boolean isFinal() {
