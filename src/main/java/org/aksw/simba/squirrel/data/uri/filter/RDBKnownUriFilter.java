@@ -16,7 +16,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.*;
 
 /**
@@ -46,11 +49,10 @@ public class RDBKnownUriFilter implements KnownUriFilter, Closeable, UriHashCust
     public static final String COLUMN_TIMESTAMP_LAST_CRAWL = "timestampLastCrawl";
     public static final String COLUMN_URI = "uri";
     public static final String COLUMN_CRAWLING_IN_PROCESS = "crawlingInProcess";
-    public static final String COLUMN_FOUNDURIS = "foundUris";
-    private static final String COLUMN_TIMESTAMP_NEXT_CRAWL = "timestampNextCrawl";
-    private static final String COLUMN_IP = "ipAddress";
-    private static final String COLUMN_TYPE = "type";
-    private static final String COLUMN_HASH_VALUE = "hashValue";
+    public static final String COLUMN_TIMESTAMP_NEXT_CRAWL = "timestampNextCrawl";
+    public static final String COLUMN_IP = "ipAddress";
+    public static final String COLUMN_TYPE = "type";
+    public static final String COLUMN_HASH_VALUE = "hashValue";
 
     /**
      * Used as a default hash value for URIS, will be replaced by real hash value as soon as it has been computed.
@@ -88,6 +90,7 @@ public class RDBKnownUriFilter implements KnownUriFilter, Closeable, UriHashCust
      * @param r                      Value for {@link #r}.
      * @param frontierDoesRecrawling Value for {@link #frontierDoesRecrawling}.
      */
+    @SuppressWarnings("unused")
     public RDBKnownUriFilter(RDBConnector connector, RethinkDB r, boolean frontierDoesRecrawling) {
         this.connector = connector;
         this.r = r;
@@ -224,7 +227,6 @@ public class RDBKnownUriFilter implements KnownUriFilter, Closeable, UriHashCust
     @Override
     public void addHashValuesForUris(List<CrawleableUri> uris) {
         for (CrawleableUri uri : uris) {
-            LOGGER.info("hi matze " + uri.getData(Constants.URI_HASH_KEY));
             r.db(DATABASE_NAME).table(TABLE_NAME).filter(doc -> doc.getField(COLUMN_URI).eq(uri.getUri().toString())).
                 update(r.hashMap(COLUMN_HASH_VALUE, ((HashValue) uri.getData(Constants.URI_HASH_KEY)).encodeToString())).run(connector.connection);
         }

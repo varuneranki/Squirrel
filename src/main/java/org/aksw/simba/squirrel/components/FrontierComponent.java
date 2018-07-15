@@ -5,7 +5,6 @@ import org.aksw.simba.squirrel.configurator.SeedConfiguration;
 import org.aksw.simba.squirrel.configurator.WebConfiguration;
 import org.aksw.simba.squirrel.configurator.WhiteListConfiguration;
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
-import org.aksw.simba.squirrel.data.uri.CrawleableUriFactoryImpl;
 import org.aksw.simba.squirrel.data.uri.UriUtils;
 import org.aksw.simba.squirrel.data.uri.filter.InMemoryKnownUriFilter;
 import org.aksw.simba.squirrel.data.uri.filter.KnownUriFilter;
@@ -15,7 +14,6 @@ import org.aksw.simba.squirrel.data.uri.info.RDBURIReferences;
 import org.aksw.simba.squirrel.data.uri.info.URIReferences;
 import org.aksw.simba.squirrel.data.uri.serialize.Serializer;
 import org.aksw.simba.squirrel.data.uri.serialize.java.GzipJavaUriSerializer;
-import org.aksw.simba.squirrel.deduplication.hashing.UriHashCustodian;
 import org.aksw.simba.squirrel.frontier.ExtendedFrontier;
 import org.aksw.simba.squirrel.frontier.Frontier;
 import org.aksw.simba.squirrel.frontier.impl.ExtendedFrontierImpl;
@@ -50,10 +48,8 @@ public class FrontierComponent extends AbstractComponent implements RespondingDa
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FrontierComponent.class);
 
-    private static final String SEED_FILE_KEY = "SEED_FILE";
     public static final String RDB_HOST_NAME_KEY = "RDB_HOST_NAME";
     public static final String RDB_PORT_KEY = "RDB_PORT";
-    private static final String COMMUNICATION_WITH_WEBSERVICE = "COMMUNICATION_WITH_WEBSERVICE";
     public static final String FRONTIER_QUEUE_NAME = "squirrel.frontier";
 
     protected IpAddressBasedQueue queue;

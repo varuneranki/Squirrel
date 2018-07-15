@@ -6,6 +6,8 @@ import org.aksw.simba.squirrel.analyzer.compress.impl.FileManager;
 import org.aksw.simba.squirrel.analyzer.manager.SimpleOrderedAnalyzerManager;
 import org.aksw.simba.squirrel.collect.SqlBasedUriCollector;
 import org.aksw.simba.squirrel.collect.UriCollector;
+import org.aksw.simba.squirrel.configurator.CkanWhiteListConfiguration;
+import org.aksw.simba.squirrel.ckancrawler.CkanCrawl;
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
 import org.aksw.simba.squirrel.data.uri.serialize.Serializer;
 import org.aksw.simba.squirrel.fetcher.Fetcher;
@@ -16,10 +18,9 @@ import org.aksw.simba.squirrel.fetcher.sparql.SparqlBasedFetcher;
 import org.aksw.simba.squirrel.frontier.Frontier;
 import org.aksw.simba.squirrel.frontier.impl.FrontierImpl;
 import org.aksw.simba.squirrel.metadata.CrawlingActivity;
-import org.aksw.simba.squirrel.metadata.MetaDataHandler;
 import org.aksw.simba.squirrel.robots.RobotsManager;
 import org.aksw.simba.squirrel.sink.Sink;
-import org.aksw.simba.squirrel.sink.TripleBasedSink;
+import org.aksw.simba.squirrel.sink.tripleBased.TripleBasedSink;
 import org.aksw.simba.squirrel.uri.processing.UriProcessor;
 import org.aksw.simba.squirrel.uri.processing.UriProcessorInterface;
 import org.aksw.simba.squirrel.utils.TempPathUtils;
@@ -31,11 +32,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.net.URI;
 import java.util.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * Standard implementation of the {@link Worker} interface.
@@ -48,10 +47,11 @@ public class WorkerImpl implements Worker, Closeable {
 
     private static final long DEFAULT_WAITING_TIME = 10000;
     private static final int MAX_URIS_PER_MESSAGE = 20;
+    public static final boolean ENABLE_CKAN_CRAWLER_FORWARDING = false;
+    private static final String CKAN_WHITELIST_FILE = "CKAN_WHITELIST_FILE";
 
     protected Frontier frontier;
     protected Sink sink;
-    protected MetaDataHandler metaDataHandler;
     protected UriCollector collector;
     protected Analyzer analyzer;
     protected RobotsManager manager;
@@ -77,7 +77,6 @@ public class WorkerImpl implements Worker, Closeable {
      *            send new URIs to.
      * @param sink
      *            Sink used by this worker to store crawled data.
-     * @param metaDataHandler Handler used by this worker to store meta data.
      * @param manager
      *            RobotsManager for handling robots.txt files.
      * @param serializer
@@ -91,11 +90,10 @@ public class WorkerImpl implements Worker, Closeable {
      *            The directory to which a domain log will be written (or
      *            {@code null} if no log should be written).
      */
-    public WorkerImpl(Frontier frontier, Sink sink, MetaDataHandler metaDataHandler, RobotsManager manager, Serializer serializer,
+    public WorkerImpl(Frontier frontier, Sink sink, RobotsManager manager, Serializer serializer,
                       UriCollector collector, long waitingTime, String logDir, boolean sendAliveMessages) {
         this.frontier = frontier;
         this.sink = sink;
-        this.metaDataHandler = metaDataHandler;
         this.manager = manager;
         this.serializer = serializer;
         this.waitingTime = waitingTime;
@@ -146,33 +144,79 @@ public class WorkerImpl implements Worker, Closeable {
         }
     }
 
+    /* Reads all CKAN URLs for determining CKAN URLs from URIs */
+    public List<String> ckanwhitelist() {
+
+        List<String> ckanlist = Arrays.asList("https://demo.ckan.org", "http://open.canada.ca/data/en/", "http://datahub.io/");
+        //This block can be used to feed list of CKANURLs for comparision
+        //In case of using this, please create ckanwhitelist.txt in whitelist folder under root
+        //Also enable volumes and environment for each worker in docker-compose-sparql-web.yml
+        /*
+        List<String> list = new ArrayList<String>();
+        try {
+            CkanWhiteListConfiguration ckanwhiteListConfiguration = CkanWhiteListConfiguration.getCkanWhiteListConfiguration();
+            if (ckanwhiteListConfiguration != null) {
+                Scanner s = new Scanner(new File(ckanwhiteListConfiguration.getCkanWhiteListURI()));
+                while (s.hasNext()) {
+                    list.add(s.next());
+                }
+
+                s.close();
+            }
+        }catch (FileNotFoundException e){
+            LOGGER.error("ckanwhitlelist file missing.",e);
+        }
+        */
+        return ckanlist;
+    }
+
+    /* converting data from CkanCrawl to URI format <key,value> */
+    public static CrawleableUri ckandata(String r) throws Exception {
+        //String a = "https://demo.ckan.org";
+        CrawleableUri uri = new CrawleableUri(new URI(r));
+        //TODO: RECEIVED DATA FROM CKAN CRAWL SHOULD BE CONVERTED INTO URIs AND FED TO FRONTIER
+        uri.addData(Constants.URI_TYPE_KEY, Constants.URI_TYPE_VALUE_DUMP);
+        return uri;
+    }
+
     @Override
     public void crawl(List<CrawleableUri> uris) {
         // perform work
         Dictionary<CrawleableUri, List<CrawleableUri>> uriMap = new Hashtable<>(uris.size(), 1);
         for (CrawleableUri uri : uris) {
             // calculate uuid for graph
-            uri.addData(CrawleableUri.UUID_KEY, "graph:" + UUID.randomUUID().toString());
-            if (sink instanceof TripleBasedSink) {
-                CrawlingActivity crawlingActivity = new CrawlingActivity(uri, this, sink);
-                if (uri.getUri() == null) {
-                    LOGGER.error("Got a CrawleableUri object with getUri()=null. It will be ignored.");
-                    crawlingActivity.setState(CrawlingActivity.CrawlingURIState.FAILED);
-                } else {
-                    try {
+            uri.addData(CrawleableUri.UUID_KEY, UUID.randomUUID().toString());
+            CrawlingActivity crawlingActivity = new CrawlingActivity(uri, this, sink);
+            if (uri.getUri() == null) {
+                LOGGER.error("Got a CrawleableUri object with getUri()=null. It will be ignored.");
+                crawlingActivity.setState(CrawlingActivity.CrawlingURIState.FAILED);
+            } else {
+                try {
+                    //CKAN Crawler is disabled by default
+                    if (ENABLE_CKAN_CRAWLER_FORWARDING) {
+                        String s = uri.getUri().toString();
+                        LOGGER.info("the uri is ", s);
+                        List<String> uriList = ckanwhitelist();
+                        if (uriList.contains(s)) {
+                            //CKAN Component is called to communicate URL to CKANCrawler
+                            CkanCrawl.send(s);
+                            String r = CkanCrawl.recieve();
+                            CrawleableUri ckanUri = ckandata(r);
+                            //EXPECTING A LIST OF URIs
+                            //TODO:CHANGE DATATYPE AND HANDLE DATA TO SEND TO FRONTIER.
+                        }
+                    } else {
                         uriMap.put(uri, performCrawling(uri));
                         crawlingActivity.setState(CrawlingActivity.CrawlingURIState.SUCCESSFUL);
-                    } catch (Exception e) {
-                        LOGGER.error("Unhandled exception while crawling \"" + uri.getUri().toString()
-                            + "\". It will be ignored.", e);
-                        crawlingActivity.setState(CrawlingActivity.CrawlingURIState.FAILED);
                     }
-                }
-                crawlingActivity.finishActivity();
-                if (metaDataHandler != null && sink instanceof TripleBasedSink) {
-                    metaDataHandler.addMetadata(crawlingActivity);
+                } catch (Exception e) {
+                    LOGGER.error("Unhandled exception while crawling \"" + uri.getUri().toString()
+                        + "\". It will be ignored.", e);
+                    crawlingActivity.setState(CrawlingActivity.CrawlingURIState.FAILED);
                 }
             }
+            crawlingActivity.finishActivity();
+
             // classify URIs
             Enumeration<List<CrawleableUri>> uriMapEnumeration = uriMap.elements();
             while (uriMapEnumeration.hasMoreElements()) {

@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 
 
 @RunWith(Parameterized.class)
-public class  MimeTypeDetectorTest {
+public class MimeTypeDetectorTest {
 
     private TypeDetector typeDetector;
     private ClassLoader classLoader;
@@ -26,7 +26,7 @@ public class  MimeTypeDetectorTest {
 
     public MimeTypeDetectorTest(String fileName, Lang type) {
         this.fileName = fileName;
-        this.expectedType= type;
+        this.expectedType = type;
     }
 
     @Before
@@ -42,7 +42,7 @@ public class  MimeTypeDetectorTest {
 
     @Parameterized.Parameters
     public static Collection filesToTest() {
-        return Arrays.asList(new Object[][] {
+        return Arrays.asList(new Object[][]{
             {"rdf_analyzer/new_york/new_york_rdf", RDFLanguages.RDFXML},
             {"sample.ttl", RDFLanguages.TURTLE}
         });
