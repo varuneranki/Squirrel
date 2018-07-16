@@ -1,18 +1,27 @@
 package org.aksw.simba.squirrel.metadata;
 
+
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
+import org.aksw.simba.squirrel.fetcher.http.HTTPFetcher;
 import org.aksw.simba.squirrel.sink.Sink;
+import org.aksw.simba.squirrel.sink.impl.file.FileBasedSink;
 import org.aksw.simba.squirrel.sink.impl.sparql.SparqlBasedSink;
 import org.aksw.simba.squirrel.sink.tripleBased.TripleBasedSink;
 import org.aksw.simba.squirrel.worker.Worker;
+import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.vocabulary.RDF;
+import org.apache.jena.vocabulary.RDFS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.GenericArrayType;
+import java.time.LocalDateTime;
+import java.util.*;
 
-import java.util.Date;
 
 /**
  * Representation of Crawling activity. A crawling activity is started by a single worker, and sends this data to the sink. So, it contains a bunch of Uris
@@ -31,11 +40,11 @@ public class CrawlingActivity {
     /**
      * When the activity has started.
      */
-    private Date dateStarted;
+    private LocalDateTime dateStarted;
     /**
      * When the activity has ended.
      */
-    private Date dateEnded;
+    private LocalDateTime dateEnded;
 
     /**
      * The uri for the crawling activity.
@@ -56,6 +65,10 @@ public class CrawlingActivity {
      * The worker that has been assigned the activity.
      */
     private Worker worker;
+    /**
+     * number of triples
+     */
+    private int numTriples;
 
 
     private String hostedOn = null;
@@ -74,14 +87,14 @@ public class CrawlingActivity {
      */
     public CrawlingActivity(CrawleableUri uri, Worker worker, Sink sink) {
         this.worker = worker;
-        this.dateStarted = new Date();
+        this.dateStarted = getLocalDateTime();
         this.uri = uri;
         this.state = CrawlingURIState.UNKNOWN;
         if (sink instanceof SparqlBasedSink) {
             graphId = ((SparqlBasedSink) sink).getGraphId(uri);
             hostedOn = ((SparqlBasedSink) sink).getUpdateDatasetURI();
         }
-        id = "activity:" + uri.getData(CrawleableUri.UUID_KEY);
+        id = "CrawlingActivity" + uri.getData(CrawleableUri.UUID_KEY);
         this.sink = sink;
     }
 
@@ -93,8 +106,10 @@ public class CrawlingActivity {
      * Finish the crawling activity and send data to sink
      */
     public void finishActivity() {
-        dateEnded = new Date();
+        countTriples();
+        dateEnded = getLocalDateTime();
         prepareDataAndSendToSink();
+
     }
 
     /**
@@ -102,68 +117,134 @@ public class CrawlingActivity {
      */
     public void prepareDataAndSendToSink() {
         Model model = ModelFactory.createDefaultModel();
-        Resource activity = ResourceFactory.createResource(getId());
-        Resource resultGraph = ResourceFactory.createResource(getGraphId());
-        Resource crawledUri = ResourceFactory.createResource(getCrawleableUri().getUri().toString());
+        CrawleableUri uri = getCrawleableUri();
 
-        model.add(activity, MetaDataVocabulary.status, model.createTypedLiteral(getState().toString()));
-        model.add(activity, MetaDataVocabulary.startedAtTime, model.createTypedLiteral(getDateStarted()));
-        model.add(activity, MetaDataVocabulary.endedAtTime, model.createTypedLiteral(getDateEnded()));
-        model.add(activity, MetaDataVocabulary.wasAssociatedWith, model.createTypedLiteral(getWorker().getId()));
-        if (getSink() instanceof TripleBasedSink) {
-            model.add(activity, MetaDataVocabulary.hostedOn, model.createTypedLiteral(getHostedOn()));
-        }
-        model.add(resultGraph, MetaDataVocabulary.wasGeneratedBy, activity);
-        model.add(resultGraph, MetaDataVocabulary.uriName, crawledUri);
+        Resource nodeResultGraph = ResourceFactory.createResource(String.valueOf(geturl("Result_" + getGraphId(uri))));
+        Resource nodeCrawlingActivity = ResourceFactory.createResource(String.valueOf(geturl(getId())));
+        Resource Association = ResourceFactory.createResource(String.valueOf(geturl("Worker-checking-Crawl-guide")));
+        Resource crawling = ResourceFactory.createResource(String.valueOf(geturl("Crawl-guide")));
+
+
+        model.add(nodeCrawlingActivity, RDF.type, Prov.Activity);
+        model.add(nodeCrawlingActivity, RDFS.comment, model.createLiteral("Activity of Collecting the metadata of the Crawled content"));
+        model.add(nodeCrawlingActivity, Prov.startedAtTime, model.createTypedLiteral(getdateStarted(), XSDDatatype.XSDdateTime));
+        model.add(nodeCrawlingActivity, Prov.endedAtTime, model.createTypedLiteral(getDateEnded(), XSDDatatype.XSDdateTime));
+        model.add(nodeCrawlingActivity, Sq.status, getState().toString());
+        model.add(nodeCrawlingActivity, Sq.numberOfTriples, model.createTypedLiteral(getNumTriples(), XSDDatatype.XSDint));
+        model.add(nodeCrawlingActivity, Prov.wasAssociatedWith, model.createLiteral(geturl("Worker_" + String.valueOf(getWorker().getId()))));
+        model.add(nodeResultGraph, Prov.wasGeneratedBy, nodeCrawlingActivity);
+        model.add(nodeResultGraph, RDFS.comment, model.createLiteral("GraphID where the content is stored"));
+        model.add(nodeResultGraph, Sq.OfUri, model.createLiteral(getCrawleableUri().toString()));
+        model.add(nodeCrawlingActivity, Sq.hostedOn, model.createResource(getHostedOn()));
+        model.add(nodeCrawlingActivity, Prov.qualifiedAssociation, Association);
+        model.add(Association, RDF.type, model.createResource(Prov.Association.toString()));
+        model.add(Association, Prov.agent, model.createLiteral(geturl("Worker_" + String.valueOf(getWorker().getId()))));
+        model.add(Association, Prov.hadPlan, crawling);
+        model.add(crawling, RDF.type, Prov.Plan);
+        model.add(crawling, RDF.type, Prov.Entity);
+        model.add(crawling, Sq.steps, getHadPlan());
 
         getSink().addMetaData(model);
 
     }
 
 
+    public LocalDateTime getLocalDateTime() {
+        return LocalDateTime.now();
+    }
+
+    public LocalDateTime getdateStarted() {
+        return dateStarted;
+    }
+
+    public LocalDateTime getDateEnded() {
+        return dateEnded;
+    }
+
+    /**
+     * @return unique Id
+     */
+
     public String getId() {
         return id;
     }
 
-    public String getDateStarted() {
-        String dateString = dateStarted.toString();
-        dateString = dateString.replace(" ", "_");
-        dateString = dateString.replace(":", "_");
-        return dateString;
+    public void setNumTriples(int numTriples) {
+        this.numTriples = numTriples;
     }
 
-    public String getDateEnded() {
+    private void countTriples() {
+        int sum = 7;
+        if (sink instanceof SparqlBasedSink) {
 
-        String dateString = dateEnded.toString();
-        dateString = dateString.replace(" ", "_");
-        dateString = dateString.replace(":", "_");
-        return dateString;
+            //sum += ((SparqlBasedSink) sink).getNumberOfTriplesForGraph(uri);
+
+            setNumTriples(sum);
+        } else {
+            setNumTriples(-1);
+        }
     }
 
+
+    public int getNumTriples() {
+        return numTriples;
+    }
+
+    public String getclasses() {
+        List<String> k = new ArrayList<>();
+
+        for (Object object : Object.class.getClasses())
+        {
+            if (object instanceof CrawleableUri && !object.equals(CrawleableUri.class)) {
+
+                k.add(object.getClass().getSimpleName());
+            }
+
+        }
+        return k.toString();
+
+    }
+
+
+    public String getHadPlan(){
+        return getclasses();
+
+    }
+
+    public CrawleableUri getCrawleableUri()
+    {
+        return uri;
+    }
+
+    public String getGraphId(CrawleableUri uri)
+    {
+        return graphId;
+
+    }
 
     public Worker getWorker() {
         return worker;
     }
 
-    public enum CrawlingURIState {SUCCESSFUL, UNKNOWN, FAILED;}
+    public enum CrawlingURIState {SUCCESSFUL, UNKNOWN, FAILED}
 
     public CrawlingURIState getState() {
         return state;
     }
 
-    public CrawleableUri getCrawleableUri() {
+    public String geturl (String o)
+    {
+        String uri = "http://www.example.org/" + o;
         return uri;
-    }
 
-    public String getGraphId() {
-        return graphId;
     }
 
     public String getHostedOn() {
-        return hostedOn;
+        return hostedOn.replace("update"," ");
     }
 
     public Sink getSink() {
         return sink;
     }
 }
+

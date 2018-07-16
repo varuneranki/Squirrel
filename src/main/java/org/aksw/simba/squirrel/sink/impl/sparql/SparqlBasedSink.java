@@ -75,10 +75,14 @@ public class SparqlBasedSink implements AdvancedTripleBasedSink, Sink {
     public SparqlBasedSink(String host, String port, String updateAppendix, String queryAppendix, String updateMetaDataAppendix, String queryMetaDataAppendix) {
         String prefix = "http://" + host + ":" + port + "/";
         updateDatasetURI = prefix + updateAppendix;
-        queryDatasetURI = prefix + queryAppendix;
-        updateMetaDataUri = prefix + updateMetaDataAppendix;
+        queryDatasetURI = prefix +  queryAppendix;updateMetaDataUri = prefix + updateMetaDataAppendix;
         queryMetaDataUri = prefix + queryMetaDataAppendix;
     }
+
+    public void addMetadata() {
+        throw new UnsupportedOperationException();
+    }
+
 
     @Override
     public void addTriple(CrawleableUri uri, Triple triple) {
