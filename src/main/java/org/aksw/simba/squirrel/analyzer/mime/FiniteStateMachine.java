@@ -20,7 +20,6 @@ public interface FiniteStateMachine {
      *
      * @return true or false.
      */
-    boolean canStop();
 
     boolean isError();
 

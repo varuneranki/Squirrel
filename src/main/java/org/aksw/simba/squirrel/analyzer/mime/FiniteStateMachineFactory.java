@@ -1,21 +1,23 @@
+
 package org.aksw.simba.squirrel.analyzer.mime;
 
-import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
 
 public class FiniteStateMachineFactory {
 
-    static FiniteStateMachine create(Lang mimeType) {
+    static public FiniteStateMachine create(String mimeType) {
         return new FiniteStateMachineFactory().buildStateMachine(mimeType);
     }
 
-    private FiniteStateMachine buildStateMachine(Lang mimeType) {
-        if(mimeType == RDFLanguages.RDFXML)
-            return buildRDFStateMachine();
-        else if(mimeType == RDFLanguages.TURTLE)
-            return buildTurtleStateMachine();
-        else
-            return null;
+    private FiniteStateMachine buildStateMachine(String mimeType) {
+        switch (mimeType) {
+            case "RDFXML":
+                return buildRDFStateMachine();
+            case "TTL":
+                return buildTurtleStateMachine();
+            default:
+                return null;
+        }
     }
 
     /**

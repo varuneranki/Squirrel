@@ -20,13 +20,10 @@ public class Automata implements FiniteStateMachine {
         this.mimeType = type;
     }
 
-    public void switchState(final String c) {
+    public void  switchState(final String c) {
         this.current = this.current.transit(c);
     }
 
-    public boolean canStop() {
-        return this.current.isFinal();
-    }
 
     public boolean isError() {
         return this.current.isError();

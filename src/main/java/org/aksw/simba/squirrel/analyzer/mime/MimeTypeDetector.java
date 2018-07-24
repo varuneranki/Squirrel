@@ -2,28 +2,36 @@ package org.aksw.simba.squirrel.analyzer.mime;
 
 import org.aksw.simba.squirrel.analyzer.impl.RDFAnalyzer;
 import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFLanguages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 public class MimeTypeDetector implements TypeDetector {
-	private static final Logger LOGGER = LoggerFactory.getLogger(RDFAnalyzer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RDFAnalyzer.class);
+
+    protected List<Lang> mimeTypes = new ArrayList<>();
 
     public Lang detectMimeType(File data) {
 
         LinkedList<FiniteStateMachine> machinesList = new LinkedList<FiniteStateMachine>(); //3.i
-        Lang mimeType = null;
+
+        setMimeTypes(Lang.RDFXML, Lang.TURTLE);
+
+        Lang detectedMimeType = null;
 
         try {
             FileInputStream inputStream = new FileInputStream(data.getAbsolutePath());
 
-            machinesList.add(FiniteStateMachineFactory.create(RDFLanguages.RDFXML));
-            machinesList.add(FiniteStateMachineFactory.create(RDFLanguages.TURTLE));
+            for (Lang type : mimeTypes) {
+                machinesList.add(FiniteStateMachineFactory.create(type.getName()));
+            }
+
 
             char current;
 
@@ -37,12 +45,20 @@ public class MimeTypeDetector implements TypeDetector {
                     machinesList.addLast(machine); //3.iii
             }
 
-            mimeType = machinesList.get(0).getMimeType();
+            if(machinesList.size() != 0)
+                detectedMimeType = machinesList.get(0).getMimeType();
+            else
+                detectedMimeType = Lang.RDFNULL;
             inputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        return mimeType;
+        return detectedMimeType;
+    }
+
+    private void setMimeTypes(Lang ... types) {
+        for(Lang type : types)
+            mimeTypes.add(type);
     }
 }
