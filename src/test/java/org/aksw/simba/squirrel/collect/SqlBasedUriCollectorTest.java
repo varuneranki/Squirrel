@@ -32,7 +32,7 @@ public class SqlBasedUriCollectorTest {
         serializer = new GzipJavaUriSerializer();
         dbdir = TempFileHelper.getTempDir("dbTest", "").getAbsolutePath() + File.separator + "test";
         ClassLoader classLoader = getClass().getClassLoader();
-        file = new File(classLoader.getResource("collector/mCloudURIs.txt").getFile());
+        file = new File(SqlBasedUriCollectorTest.class.getResource("rdf_analyzer/new_york").getFile());
         fr = new FileReader(file);
         br = new BufferedReader(fr);
 

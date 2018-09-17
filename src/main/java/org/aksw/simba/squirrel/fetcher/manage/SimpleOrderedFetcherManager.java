@@ -50,6 +50,8 @@ public class SimpleOrderedFetcherManager implements Fetcher {
         return resultFile;
     }
 
+
+
     @Override
     public void close() throws IOException {
         for(Fetcher fetcher : fetchers) {
