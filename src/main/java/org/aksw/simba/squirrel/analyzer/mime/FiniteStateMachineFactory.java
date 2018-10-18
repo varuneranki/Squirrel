@@ -11,9 +11,9 @@ public class FiniteStateMachineFactory {
 
     private FiniteStateMachine buildStateMachine(String mimeType) {
         switch (mimeType) {
-            case "RDFXML":
+            case "RDF/XML":
                 return buildRDFStateMachine();
-            case "TTL":
+            case "Turtle":
                 return buildTurtleStateMachine();
             default:
                 return null;
@@ -47,6 +47,7 @@ public class FiniteStateMachineFactory {
 
         return new Automata(first, RDFLanguages.RDFXML);
     }
+
 
     /**
      * Builds a finite state machine to validate a simple
