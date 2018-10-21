@@ -2,19 +2,34 @@ package org.aksw.simba.squirrel.fetcher.manage;
 
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
 import org.aksw.simba.squirrel.fetcher.Fetcher;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 
 public class FetcherDummyTest implements Fetcher {
 
-    private boolean preFlag;
-    private boolean postFlag = false;
-    private File fetcherFile;
+    public boolean preFlag = false;
+    public boolean postFlag = false;
+    public File result = null ;
 
+    public  FetcherDummyTest(boolean flag)  {
+        setPreFlag(flag);
+    }
+
+    public File fetch(CrawleableUri uri) {
+        setPostFlag(true);
+        if(isPreFlag())
+        { //checks preflag status and sets the result accordingly
+            //setResult(new File(""));
+            setResult(new File("File.txt")); // to make sure there is some file to return
+        }
+        else{
+            setResult(null);
+        }
+        result = getResult();
+        return result;
+    }
 
     public boolean isPreFlag() {
         return preFlag;
@@ -32,36 +47,15 @@ public class FetcherDummyTest implements Fetcher {
         this.postFlag = postFlag;
     }
 
-    public File getFetcherFile() {
-        return fetcherFile;
+    public File getResult() {
+        return result;
     }
 
-    public void setFetcherFile(File fetcherFile) {
-        this.fetcherFile = fetcherFile;
+    public void setResult(File result) {
+        this.result = result;
     }
 
-    public File FetcherDummyTest(boolean preFlag) throws Exception {
-        setPreFlag(preFlag);
-        if (preFlag) {
-           File fetcherFile =  fetch(null);
-           setPostFlag(true);
-           return fetcherFile;
-        }
-        else{
-            return null;
-        }
-
-    }
-
-    @Override
-    public File fetch(CrawleableUri uri)
-    {
-        return null;
-    }
-
-    @Override
     public void close() throws IOException {
 
     }
 }
-
