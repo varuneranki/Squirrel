@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 public class MimeTypeDetector implements TypeDetector {
     private static final Logger LOGGER = LoggerFactory.getLogger(RDFAnalyzer.class);
@@ -35,14 +36,19 @@ public class MimeTypeDetector implements TypeDetector {
 
             char current;
 
-            while (inputStream.available() > 0 && machinesList.size() > 1) { //3.iv (until only one machine is in list)
+            while (inputStream.available() > 0) {
                 current = (char) inputStream.read();
 
-                FiniteStateMachine machine = machinesList.remove(); // (machines gets removed from list for processing)
-                machine.switchState(String.valueOf(current)); //3.ii
+                ListIterator<FiniteStateMachine> iter = machinesList.listIterator();
 
-                if (!machine.isError()) // (the machine is added only if its not in error state)
-                    machinesList.addLast(machine); //3.iii
+                while(iter.hasNext()) {
+                    FiniteStateMachine machine = iter.next();
+                    machine.switchState(String.valueOf(current));
+
+                    if (machine.isError())
+                        iter.remove();
+                }
+
             }
 
             if(machinesList.size() != 0)
