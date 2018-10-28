@@ -2,6 +2,7 @@
 package org.aksw.simba.squirrel.analyzer.mime;
 
 import org.apache.jena.riot.RDFLanguages;
+import java.util.ArrayList;
 
 public class FiniteStateMachineFactory {
 
@@ -26,28 +27,17 @@ public class FiniteStateMachineFactory {
      * @return
      */
     private FiniteStateMachine buildRDFStateMachine() {
-        State first = new RtState();
-        State second = new RtState();
-        State third = new RtState();
-        State fourth = new RtState();
-        State fifth = new RtState();
-        State sixth = new RtState(true, false);
-        State errorState = new RtState(true, true);
 
-        first.with(new RtTransition("<", second));
-        first.with(new RtTransition("[^<]", errorState));
-        second.with(new RtTransition("\\?", third));
-        second.with(new RtTransition("[^\\?]", errorState));
-        third.with(new RtTransition("x", fourth));
-        third.with(new RtTransition("[^x]", errorState));
-        fourth.with(new RtTransition("m", fifth));
-        fourth.with(new RtTransition("[^m]", errorState));
-        fifth.with(new RtTransition("l", sixth));
-        fifth.with(new RtTransition("[^l]", errorState));
+        ArrayList<State> listOfStates = new ArrayList<>();
 
-        return new Automata(first, RDFLanguages.RDFXML);
+        String[] validRules = {"<", "\\?", "x", "m", "l"};
+        String[] invalidRules = {"[^<]", "[^\\?]", "[^x]", "[^m]", "[^l]"};
+
+        populateStates(listOfStates, 5);
+        populateTransitions(listOfStates, validRules, invalidRules);
+
+        return new Automata(listOfStates.get(0), RDFLanguages.RDFXML);
     }
-
 
     /**
      * Builds a finite state machine to validate a simple
@@ -55,31 +45,39 @@ public class FiniteStateMachineFactory {
      * @return
      */
     private FiniteStateMachine buildTurtleStateMachine() {
-        State first = new RtState();
-        State second = new RtState();
-        State third = new RtState();
-        State fourth = new RtState();
-        State fifth = new RtState();
-        State sixth = new RtState();
-        State seventh = new RtState();
-        State eighth = new RtState(true, false);
-        State errorState = new RtState(true, true);
 
-        first.with(new RtTransition("[\\@]", second));
-        first.with(new RtTransition("[^\\@]", errorState));
-        second.with(new RtTransition("p", third));
-        second.with(new RtTransition("[^p]", errorState));
-        third.with(new RtTransition("r", fourth));
-        third.with(new RtTransition("[^r]", errorState));
-        fourth.with(new RtTransition("e", fifth));
-        fourth.with(new RtTransition("[^e]", errorState));
-        fifth.with(new RtTransition("f", sixth));
-        fifth.with(new RtTransition("[^f]", errorState));
-        sixth.with(new RtTransition("i", seventh));
-        sixth.with(new RtTransition("[^i]", errorState));
-        seventh.with(new RtTransition( "x", eighth));
-        seventh.with(new RtTransition("[^x]", errorState));
 
-        return new Automata(first, RDFLanguages.TURTLE);
+        ArrayList<State> listOfStates = new ArrayList<>();
+
+        String[] validRules = {"\\@", "p", "r", "e", "f","i","x"};
+        String[] invalidRules = {"[^\\@]", "[^p]", "[^r]", "[^e]", "[^f]","[^i]","[^x]"};
+
+        populateStates(listOfStates, 5);
+        populateTransitions(listOfStates, validRules, invalidRules);
+
+        return new Automata(listOfStates.get(0), RDFLanguages.TURTLE);
     }
+
+    private void populateStates(ArrayList<State>  current, int numberOfStates) {
+        for(int i=0; i<numberOfStates; i++)
+            current.add(new RtState());
+        current.add(new RtState(true, false));
+        current.add(new RtState(true, true));
+    }
+
+    private void populateTransitions(ArrayList<State> current, String[] validRules, String[] invalidRules) {
+
+        int i = 0;
+
+        for(int j=0;j<(current.size()-2);j++) {
+            current.get(j).with(new RtTransition(validRules[i], current.get(j+1)));
+            current.get(j).with(new RtTransition(invalidRules[i++], current.get(current.size()-1)));
+        }
+    }
+
+
+
+
+
+
 }
