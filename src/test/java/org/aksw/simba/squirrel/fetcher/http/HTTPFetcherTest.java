@@ -62,7 +62,7 @@ public class HTTPFetcherTest extends AbstractServerMockUsingTest {
     public void fetch() throws Exception {
         HTTPFetcher fetcher = new HTTPFetcher();
             File data = fetcher.fetch(seeds[0]);
-            assertNotNull(data);
+            assertNotNull(data); //checks if the outputfile is not null
         }
 
 
