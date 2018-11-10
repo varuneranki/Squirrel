@@ -1,5 +1,6 @@
 package org.aksw.simba.squirrel.fetcher.http;
 
+import org.aksw.commons.util.Files;
 import org.aksw.simba.squirrel.AbstractServerMockUsingTest;
 import org.aksw.simba.squirrel.data.uri.CrawleableUri;
 import org.aksw.simba.squirrel.data.uri.CrawleableUriFactory;
@@ -23,7 +24,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
+
 @RunWith(Parameterized.class)
 public class HTTPFetcherTest extends AbstractServerMockUsingTest {
 
@@ -60,13 +62,10 @@ public class HTTPFetcherTest extends AbstractServerMockUsingTest {
 
     @Test
     public void fetch() throws Exception {
-        HTTPFetcher fetcher = new HTTPFetcher();
+            int expected_file_content = 110;
+            HTTPFetcher fetcher = new HTTPFetcher();
             File data = fetcher.fetch(seeds[0]);
-            assertNotNull(data); //checks if the outputfile is not null
+            assertNotNull(data); //checks that the file has been fetched
+            assertEquals(expected_file_content,data.length()); //checks that the fetched file is not empty and has the expeceted content
         }
-
-
-
-
-
 }
