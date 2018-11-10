@@ -20,9 +20,9 @@ public class MimeTypeDetector implements TypeDetector {
 
     public Lang detectMimeType(File data) {
 
-        LinkedList<FiniteStateMachine> machinesList = new LinkedList<FiniteStateMachine>(); //3.i
+        LinkedList<FiniteStateMachine> machinesList = new LinkedList<FiniteStateMachine>();
 
-        setMimeTypes(Lang.RDFXML, Lang.TURTLE);
+        setMimeTypes(Lang.RDFXML, Lang.TURTLE, Lang.NTRIPLES);
 
         Lang detectedMimeType = null;
 
@@ -36,19 +36,23 @@ public class MimeTypeDetector implements TypeDetector {
 
             char current;
 
-            while (inputStream.available() > 0) {
+            while (inputStream.available() > 0 && machinesList.size() > 1) {
                 current = (char) inputStream.read();
 
-                ListIterator<FiniteStateMachine> iter = machinesList.listIterator();
+                //if( Character.isWhitespace(current) || current=='#'){
+                  //  break;
+                //}
+                //else {
+                    ListIterator<FiniteStateMachine> iter = machinesList.listIterator();
 
-                while(iter.hasNext()) {
-                    FiniteStateMachine machine = iter.next();
-                    machine.switchState(String.valueOf(current));
+                    while (iter.hasNext()) {
+                        FiniteStateMachine machine = iter.next();
+                        machine.switchState(String.valueOf(current));
 
-                    if (machine.isError())
-                        iter.remove();
-                }
-
+                        if (machine.isError())
+                            iter.remove();
+                    }
+                //}
             }
 
             if(machinesList.size() != 0)

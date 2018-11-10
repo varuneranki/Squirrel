@@ -16,6 +16,8 @@ public class FiniteStateMachineFactory {
                 return buildRDFStateMachine();
             case "Turtle":
                 return buildTurtleStateMachine();
+            case "N-Triples":
+                return buildNTriplesStateMachine();
             default:
                 return null;
         }
@@ -56,6 +58,25 @@ public class FiniteStateMachineFactory {
         populateTransitions(listOfStates, validRules, invalidRules);
 
         return new Automata(listOfStates.get(0), RDFLanguages.TURTLE);
+    }
+
+    /**
+     * Builds a finite state machine to validate a simple
+     * NTRIPLES file
+     * @return
+     */
+
+    private FiniteStateMachine buildNTriplesStateMachine() {
+
+        ArrayList<State> listOfStates = new ArrayList<>();
+
+        String[] validRules = {"<", "h", "t", "t", "p"};
+        String[] invalidRules = {"[^<]", "[^h]", "[^t]", "[^t]", "[^p]"};
+
+        populateStates(listOfStates, 5);
+        populateTransitions(listOfStates, validRules, invalidRules);
+
+        return new Automata(listOfStates.get(0), RDFLanguages.NTRIPLES);
     }
 
     private void populateStates(ArrayList<State>  current, int numberOfStates) {

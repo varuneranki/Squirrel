@@ -43,8 +43,9 @@ public class MimeTypeDetectorTest {
     @Parameterized.Parameters
     public static Collection filesToTest() {
         return Arrays.asList(new Object[][]{
-            {"rdf_analyzer/new_york/new_york_rdf", RDFLanguages.RDFXML},
-            {"rdf_analyzer/new_york/new_york_turtle", RDFLanguages.TURTLE}
+            {"rdf_analyzer/new_york/RDFXML", RDFLanguages.RDFXML},
+            {"rdf_analyzer/new_york/new_york_turtle", RDFLanguages.TURTLE},
+            {"sample.nt", RDFLanguages.NTRIPLES}
         });
     }
 
