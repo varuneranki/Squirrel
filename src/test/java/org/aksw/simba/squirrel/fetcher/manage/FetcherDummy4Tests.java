@@ -7,13 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.File;
 import java.io.IOException;
 
-public class FetcherDummyTest implements Fetcher {
+public class FetcherDummy4Tests implements Fetcher {
 
     public boolean preFlag = false;
     public boolean postFlag = false;
     public File result = null ;
 
-    public  FetcherDummyTest(boolean flag)  {
+    public  FetcherDummy4Tests(boolean flag)  {
         setPreFlag(flag);
     }
 
