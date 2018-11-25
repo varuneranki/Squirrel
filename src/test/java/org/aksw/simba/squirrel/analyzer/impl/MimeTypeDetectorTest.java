@@ -45,7 +45,8 @@ public class MimeTypeDetectorTest {
         return Arrays.asList(new Object[][]{
             {"rdf_analyzer/new_york/RDFXML", RDFLanguages.RDFXML},
             {"rdf_analyzer/new_york/new_york_turtle", RDFLanguages.TURTLE},
-            {"sample.nt", RDFLanguages.NTRIPLES}
+            {"sample.nt",RDFLanguages.NTRIPLES},
+            {"rdf_analyzer/new_york/new_york_rdfjson",RDFLanguages.RDFJSON}
         });
     }
 

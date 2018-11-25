@@ -13,11 +13,13 @@ public class FiniteStateMachineFactory {
     private FiniteStateMachine buildStateMachine(String mimeType) {
         switch (mimeType) {
             case "RDF/XML":
-                return buildRDFStateMachine();
+                return buildRDFXMLStateMachine();
             case "Turtle":
                 return buildTurtleStateMachine();
             case "N-Triples":
                 return buildNTriplesStateMachine();
+            case "RDF/JSON":
+                return buildRDFJSONStateMachine();
             default:
                 return null;
         }
@@ -25,10 +27,10 @@ public class FiniteStateMachineFactory {
 
     /**
      * Builds a finite state machine to validate a simple
-     * RDF file
+     * RDFXML file
      * @return
      */
-    private FiniteStateMachine buildRDFStateMachine() {
+    private FiniteStateMachine buildRDFXMLStateMachine() {
 
         ArrayList<State> listOfStates = new ArrayList<>();
 
@@ -39,25 +41,6 @@ public class FiniteStateMachineFactory {
         populateTransitions(listOfStates, validRules, invalidRules);
 
         return new Automata(listOfStates.get(0), RDFLanguages.RDFXML);
-    }
-
-    /**
-     * Builds a finite state machine to validate a simple
-     * TURTLE file
-     * @return
-     */
-    private FiniteStateMachine buildTurtleStateMachine() {
-
-
-        ArrayList<State> listOfStates = new ArrayList<>();
-
-        String[] validRules = {"\\@", "p", "r", "e", "f","i","x"};
-        String[] invalidRules = {"[^\\@]", "[^p]", "[^r]", "[^e]", "[^f]","[^i]","[^x]"};
-
-        populateStates(listOfStates, 5);
-        populateTransitions(listOfStates, validRules, invalidRules);
-
-        return new Automata(listOfStates.get(0), RDFLanguages.TURTLE);
     }
 
     /**
@@ -77,6 +60,47 @@ public class FiniteStateMachineFactory {
         populateTransitions(listOfStates, validRules, invalidRules);
 
         return new Automata(listOfStates.get(0), RDFLanguages.NTRIPLES);
+    }
+
+    /**
+     * Builds a finite state machine to validate a simple
+     * TURTLE file
+     * @return
+     */
+    private FiniteStateMachine buildTurtleStateMachine() {
+
+
+        ArrayList<State> listOfStates = new ArrayList<>();
+
+        String[] validRules = {"\\@", "p", "r", "e", "f","i","x"};
+        String[] invalidRules = {"[^\\@]", "[^p]", "[^r]", "[^e]", "[^f]","[^i]","[^x]"};
+
+        populateStates(listOfStates, 7);
+        populateTransitions(listOfStates, validRules, invalidRules);
+
+        return new Automata(listOfStates.get(0), RDFLanguages.TURTLE);
+    }
+
+
+
+    /**
+     * Builds a finite state machine to validate a simple
+     * RDFJSON file
+     * @return
+     */
+
+    private FiniteStateMachine buildRDFJSONStateMachine(){
+
+        ArrayList<State> listOfStates = new ArrayList<>();
+
+        String[] validRules = {"\\{","\"","h", "t", "t", "p"};
+        String[] invalidRules = {"[^\\{]","[^\"]", "[^h]", "[^t]", "[^t]", "[^p]"};
+
+        populateStates(listOfStates, validRules.length);
+        populateTransitions(listOfStates, validRules, invalidRules);
+
+        return new Automata(listOfStates.get(0), RDFLanguages.RDFJSON);
+
     }
 
     private void populateStates(ArrayList<State>  current, int numberOfStates) {

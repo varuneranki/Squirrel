@@ -22,7 +22,7 @@ public class MimeTypeDetector implements TypeDetector {
 
         LinkedList<FiniteStateMachine> machinesList = new LinkedList<FiniteStateMachine>();
 
-        setMimeTypes(Lang.RDFXML, Lang.TURTLE, Lang.NTRIPLES);
+        setMimeTypes(Lang.RDFXML, Lang.TURTLE, Lang.NTRIPLES, Lang.RDFJSON);
 
         Lang detectedMimeType = null;
 
@@ -33,26 +33,33 @@ public class MimeTypeDetector implements TypeDetector {
                 machinesList.add(FiniteStateMachineFactory.create(type.getName()));
             }
 
-
             char current;
 
+           nextchar:
             while (inputStream.available() > 0 && machinesList.size() > 1) {
                 current = (char) inputStream.read();
 
-                //if( Character.isWhitespace(current) || current=='#'){
-                  //  break;
-                //}
-                //else {
+                if( Character.isWhitespace(current)) {
+                   continue nextchar;
+                }
+                else if( current == '#') {
+                    do {
+                        current = (char) inputStream.read();
+                    } while(current != '\n');
+                    continue nextchar;
+                }
+
+
                     ListIterator<FiniteStateMachine> iter = machinesList.listIterator();
 
                     while (iter.hasNext()) {
                         FiniteStateMachine machine = iter.next();
-                        machine.switchState(String.valueOf(current));
+                         machine.switchState(String.valueOf(current));
 
                         if (machine.isError())
                             iter.remove();
                     }
-                //}
+
             }
 
             if(machinesList.size() != 0)
