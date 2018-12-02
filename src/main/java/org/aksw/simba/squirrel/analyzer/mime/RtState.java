@@ -24,11 +24,11 @@ public final class RtState implements State {
 
     public State transit(final String c) {
         return transitions
-                .stream()
-                .filter(t -> t.isPossible(c))
-                .map(Transition::state)
-                .findAny()
-                .get();
+            .stream()
+            .filter(t -> t.isPossible(c))
+            .map(Transition::state)
+            .findAny()
+            .get();
     }
 
     public boolean isFinal() {

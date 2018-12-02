@@ -22,7 +22,7 @@ public class MimeTypeDetector implements TypeDetector {
 
         LinkedList<FiniteStateMachine> machinesList = new LinkedList<FiniteStateMachine>();
 
-        setMimeTypes(Lang.RDFXML, Lang.TURTLE, Lang.NTRIPLES, Lang.RDFJSON);
+        setMimeTypes(Lang.RDFXML, Lang.TURTLE, Lang.NTRIPLES, Lang.RDFJSON, Lang.JSONLD);
 
         Lang detectedMimeType = null;
 
@@ -35,34 +35,33 @@ public class MimeTypeDetector implements TypeDetector {
 
             char current;
 
-           nextchar:
+            nextchar:
             while (inputStream.available() > 0 && machinesList.size() > 1) {
                 current = (char) inputStream.read();
 
-                if( Character.isWhitespace(current)) {
-                   continue nextchar;
-                }
-                else if( current == '#') {
+                if (Character.isWhitespace(current)) {
+                    continue nextchar;
+                } else if (current == '#') {
                     do {
                         current = (char) inputStream.read();
-                    } while(current != '\n');
+                    } while (current != '\n');
                     continue nextchar;
                 }
 
 
-                    ListIterator<FiniteStateMachine> iter = machinesList.listIterator();
+                ListIterator<FiniteStateMachine> iter = machinesList.listIterator();
 
-                    while (iter.hasNext()) {
-                        FiniteStateMachine machine = iter.next();
-                         machine.switchState(String.valueOf(current));
+                while (iter.hasNext()) {
+                    FiniteStateMachine machine = iter.next();
+                    machine.switchState(String.valueOf(current));
 
-                        if (machine.isError())
-                            iter.remove();
-                    }
+                    if (machine.isError())
+                        iter.remove();
+                }
 
             }
 
-            if(machinesList.size() != 0)
+            if (machinesList.size() != 0)
                 detectedMimeType = machinesList.get(0).getMimeType();
             else
                 detectedMimeType = Lang.RDFNULL;
@@ -74,8 +73,8 @@ public class MimeTypeDetector implements TypeDetector {
         return detectedMimeType;
     }
 
-    private void setMimeTypes(Lang ... types) {
-        for(Lang type : types)
+    private void setMimeTypes(Lang... types) {
+        for (Lang type : types)
             mimeTypes.add(type);
     }
 }
