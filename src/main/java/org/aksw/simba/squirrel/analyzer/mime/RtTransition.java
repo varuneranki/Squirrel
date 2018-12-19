@@ -1,5 +1,4 @@
 package org.aksw.simba.squirrel.analyzer.mime;
-
 /**
  * Transition in finite state machine.
  */
