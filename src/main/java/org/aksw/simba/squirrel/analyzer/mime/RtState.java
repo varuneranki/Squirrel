@@ -1,7 +1,7 @@
 package org.aksw.simba.squirrel.analyzer.mime;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * State in a finite state machine.
@@ -22,7 +22,7 @@ public final class RtState implements State {
         this.isError = isError;
     }
 
-    public State transit(final String c) {
+    public State transit(final String c) throws NoSuchElementException {
         return transitions
             .stream()
             .filter(t -> t.isPossible(c))

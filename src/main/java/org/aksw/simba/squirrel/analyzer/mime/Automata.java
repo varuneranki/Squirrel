@@ -2,6 +2,8 @@ package org.aksw.simba.squirrel.analyzer.mime;
 
 import org.apache.jena.riot.Lang;
 
+import java.util.NoSuchElementException;
+
 public class Automata implements FiniteStateMachine {
 
     /**
@@ -21,7 +23,11 @@ public class Automata implements FiniteStateMachine {
     }
 
     public void switchState(final String c) {
+        try {
         this.current = this.current.transit(c);
+    }catch (NoSuchElementException e){
+            e.printStackTrace();//Returns the error message "No value present"
+        }
     }
 
 
